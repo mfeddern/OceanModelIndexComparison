@@ -1,0 +1,631 @@
+---
+title: "Sablefish Update Analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      fig.align = 'center')
+
+HomeFile <- getwd()
+setwd(HomeFile)
+```
+
+```{r Initial_Coding_Data_Manipulation, echo = FALSE}
+####### BRING IN ROMS DATA AND PROCESS ###################
+
+# bring in old roms data ####
+roms_old_all = data.frame(read.table('/Users/Nick.Tolimieri/Documents/Sablefish/Sablefish Recruitment/_02_ROMS data/ROMS_vars_north.csv',sep=',',header=TRUE))
+# colnames(roms_old_all)
+roms_old = roms_old_all[,c('Year','Month','Day','H2a','H7a','H8a','H10','H21a')]
+
+# updated roms data #####
+
+roms_new_all =  data.frame(read.table('ROMS_vars_ext_north.csv',sep=',',header=TRUE))
+roms_new = roms_new_all[,c('Year','Month','Day','H2a','H7a','H8a','H10','H21a')]
+
+# combine roms data ####
+
+roms = data.frame(rbind(roms_old,roms_new))
+ROMS = roms # save before altering
+write.csv(roms, 'DATA_ROMS_combined_updated_raw.csv', row.names = FALSE)
+
+# head(roms)
+# tail(roms)
+
+# make new var for winter values that cross years
+
+roms$y2 = roms$Year
+roms$y2 = ifelse(roms$Month==12, roms$Year+1,roms$Year)
+
+#### calcuate periods specific values for each ROMS variable #####
+
+ROMS = data.frame(min(roms$Year):max(roms$Year))
+colnames(ROMS)<-'Year'
+
+roms$H2a = roms$H2a-3.5
+
+H2a = aggregate(H2a ~ Year, data=roms[roms$Month %in% 6:12,], FUN=sum)           #H2a
+ROMS$H2a = H2a[match(ROMS$Year, H2a$Year+1),2]
+    
+ROMS$H7a = aggregate(H7a ~ Year, data=roms[roms$Month %in% 1:4,], FUN=sum)[,2]              #H7a
+    
+roms$H8a = roms$H8a - 3.5 # for degree days
+ROMS$H8a = aggregate(H8a ~ Year, data=roms[roms$Month %in% 1:4,], FUN=sum)[,2]              #H8a
+     
+     
+ROMS$H10 = aggregate(H10 ~ Year, data=roms[roms$Month %in% 2:5,], FUN=sum)[,2]                #H10
+
+# 21a and 17a are the same data summed over different periods
+
+roms$H17a = roms$H21a - 3.5
+ROMS$H17a = aggregate(H17a ~ Year, data=roms[roms$Month %in% 2:5,], FUN=sum)[,2]            #H21a
+
+ROMS$version = ifelse(ROMS$Year<2011,'old','new')
+# head(ROMS)
+colnames(ROMS) = c('Year','DDpre','CSTegg','DDegg','LSTyolk','DDlarv','Version')
+
+##### BRING IN FISH DATA AND PROCESS A BIT ####
+
+#### data through 2015 from the 2016 assessment #### 
+
+fish2016 = data.frame(read.table('/Users/Nick.Tolimieri/Documents/Sablefish/Sablefish Recruitment/_01_Data/SablefishData2015.csv', header=TRUE, sep=','))
+
+h = 0.6                  
+Ro = 17198
+So = 115622
+b = (Ro*0.2*So)/(h*Ro)-(0.2*So)
+S = fish2016$sp.bio
+R.pred <- (Ro*S/(b+S))  
+
+R.ass = fish2016$age.0 # recruitment from the 20216 assessment
+
+resids = R.ass - R.pred
+# resids
+fish2016$resids = resids
+# head(fish2016)
+colnames(fish2016)[1] = 'Year'
+
+
+#### bring in data from the 2019 stock assessement ####
+
+fish2019 <- data.frame((read.csv("C:/Users/nick.tolimieri/Documents/Sablefish/_00_Sablefish SSH - 1925-2019 - RecDev/Processed_Data/Data_All_Proccessed_Data.csv", header=TRUE )))
+
+fishyy = fish2019[fish2019$year %in% 1981:2019,c('year','resids','Rec_Dev_Value')]
+colnames(fishyy) <- c('Year','resids2019','recdev2019')
+
+fishy = merge(ROMS, fishyy, by = 'Year')
+fish <- merge(fishy, fish2016, by = "Year", all=TRUE)
+
+# head(fish) 
+# tail(fish)
+write.csv(fish,'D_Fish_ROMS_north_update.csv', row.names = FALSE)
+
+```
+
+
+## Introduction and Background
+
+Back in the early summer of 2019, Chris Edwards sent us the updated ROMS output through 2018.  At the time, Melissa and I were fully invested in getting the 2019 sablefish assessment done, including the Ecological Considerations section, and I did only a cursory analysis of the new data at the time.  The present "document" serves two puposes. First, it lets me play around with RMarkdown.  Second, it is an attempt to do some more detailed but still somewhat preliminary analyses of how the updated ROMS data affect the previous work Melissa and I and others did. Key questions are:
+
+(1) Does the model still work?
+
+(2) If not, why?  What changed?
+
+The short answer is: 
+
+* The model doesn't work, and 
+* My guess is that the blob years mess up the relationships
+
+
+## Previous work - a reminder
+
+You will remember that we developed a literature-based life-history model for sablefish. We then used that model to select output from a ROMS model to use as predictors of sablefish recruitment, specifically residuals around the stock recruitment curve.  We used stock-recruitment information from the 2016 sablefish assessment.  The ROMS drivers were avilable for 1980 to 2010. After a bunch of model fitting and tons of model testing and diagnostics, the best fit model was:
+
+residuals ~ DDpre + DDegg + CSTegg + LSTyolk + DDlarv
+
+where:
+
+DDpre = degree days pre-spawning (and indicator of potential female condition)
+
+DDegg = degree days during the egg stage.  Affects the rate of development.
+
+CSTegg = cross shelf transport during the egg stage.  Staying close to shore is good.
+
+LSTyolk = Long shore transport during the yolksack larval stage. Transport to the north is good (at 1000 m)
+
+DDlav = warmer temps lead to faster growth.  
+
+The r^2^ for this model was 0.57, which is not great, but is better than the 0.5 needed to improve the stock assessment.
+
+## New data
+
+Chris Edwards sent us update ROMS data for 2011 - 2018.  At the time, he only sent updated data for the predictors in the best-fit model.  We might ask for two things moving forwards: (1) updated data through 2019 and (2) all of the previously tested predictors to re-do the entire model fitting for 1981 - 2019.
+
+
+There appears to be some change in median and variance between the old ROMS model and new ROMS model for the 1981-2010 and 2011- 
+`r max(fish$years)` ROMS data. Some of this difference, especially the degree days or temperature, is due to the blob, especially in 2016.  
+
+
+
+```{r ROMS_Predictors_Comparison, fig.width = 6, fig.height = 6, fig.cap="Box and whiskers plots of ROMS predictors using the the sablefish environment-recruitment model"}
+
+par( mfrow = c(3,2), mar = c(4,4,1,1))
+fish$years = ifelse(fish$Version == 'old',"1980-2010","2011-2018")
+
+plot( as.factor(fish$years), fish$DDpre, main = "DDpre" )
+plot( as.factor(fish$years), fish$DDegg, main = "DDegg" )
+plot( as.factor(fish$years), fish$CSTegg, main = "CSTeg" )
+plot( as.factor(fish$years), fish$LSTyolk, main = "LSTyolk" )
+plot( as.factor(fish$years), fish$DDlarv, main = "DDlarv" )
+
+
+```
+
+For several of the ROMS timeseries, 2016 is a weird year. For the temperature related indices (DDpreD, Degg, DDLarv), there is an obvious increase in temperature and therefore DD associated with the blob years. However, there is also a substantial change in the directional trend for most indicators around 2016 or so. Both of the transport indictors show big changes in 2016 or slightly earlier at the onset of the blob.
+
+
+```{r ROMS_Time_series, fig.width = 6, fig.height = 6, fig.cap='ROMS time series' }
+
+
+par(mfrow = c(3,2), mar = c(4,4,1,1))
+yrs = 1980:2020
+
+plot(fish$Year,fish$DDpre,type='l', xlab = NA, xlim = c(min(yrs), max(yrs)), ylab = 'DDpre')
+axis(side=1, at = yrs, tck=-0.02, labels=NA)
+
+plot(fish$Year,fish$DDegg,type='l', xlab = NA, xlim = c(min(yrs), max(yrs)), ylab = 'DDegg')
+axis(side=1, at = yrs, tck=-0.02, labels=NA)
+
+plot(fish$Year,fish$CSTegg,type='l', xlab = NA, xlim = c(min(yrs), max(yrs)), ylab = 'CSTegg')
+axis(side=1, at = yrs, tck=-0.02, labels=NA)
+
+plot(fish$Year,fish$LSTyolk,type='l', xlab = NA, xlim = c(min(yrs), max(yrs)), ylab = 'LSTyolk')
+axis(side=1, at = yrs, tck=-0.02, labels=NA)
+
+plot(fish$Year,fish$DDlarv,type='l', xlab = NA, xlim = c(min(yrs), max(yrs)), ylab = 'DDlarv')
+axis(side=1, at = yrs, tck=-0.02, labels=NA)
+
+```
+
+
+```{r Correlation_2016_vs_2919_Resids, fig.height = 4, fig.width = 4}
+#### 2016 vs 2019 data ####
+
+x = fish$resids[fish$Year %in% 1981:2010]
+y = fish$resids2019[fish$Year %in% 1981:2010]
+r_2016_vs_2019 = round(cor(x,y),2)
+
+```
+
+
+I also had a quick look at whether the years after 2011 were any different, in terms of ROMS predictors, by running an nMDS on the five predictors. I did this for both the raw predictors and for normalized ROMS data.  For the most part, the analysis suggests that the 'old' (1981-2010) ROMS data overlaps with the 'new' (2011-2018) data.  However, for the untransformed data, 2015 and 2016 stood out as different from other years (off the the far left on the ordination plots). For the normalized data, 2016 was different (far lefft) as was 2011 (far right), but 2015 did not ordinate as extermely different. It was, however, still off to the left margin of all the data points.    
+
+
+
+```{r nMDS, fig.align='center', fig.width=6.5, fig.height=6, echo=FALSE, fig.cap='nMDS of the five ROMS parameters.  The two upper panes show results for the raw data. In the two lower panes, the ROMS time series were normalized prior to the analysis'}
+
+library(vegan)
+dx = fish[fish$Year %in% 1981:2018, c('DDpre','CSTegg','DDegg','LSTyolk','DDlarv')]
+# normalize data
+dy = apply(dx, 2, scale)
+dc = ifelse(fish$Year[fish$Year %in% 1981:2018] < 2011, "white", "black")
+
+# untransformed values
+
+m1 = metaMDS(dx, distance = 'euclidean')
+
+par(mfrow = c(2,2), par = c(2,1,1,1))
+ordiplot(m1 , xlim = c(-75,75), main = "Untransformed ROMS")
+
+x = as.numeric(m1$points[,1])
+y = as.numeric(m1$points[,2])
+points(x,y, pch=21, bg = dc)
+
+ordiplot(m1 , type='none', xlim = c(-75,75))
+text(x,y, 1981:2018, cex = 0.7)
+
+# normalized time series
+m1 = metaMDS(dy, distance = 'euclidean')
+
+ordiplot(m1,xlim = c(-5,5), main = "Normalized ROMS")
+
+x = as.numeric(m1$points[,1])
+y = as.numeric(m1$points[,2])
+points(x,y, pch=21, bg = dc)
+
+ordiplot(m1, xlim = c(-5,5), type='none')
+text(x,y, 1981:2018, cex = 0.7)
+
+```
+
+
+
+
+
+
+## Stock recruitment data. 
+
+The original analysis examined the recruitment-environment relationship for 1981 - 2010 based on the availability of ROMS predictors.  
+The data from the 2016 and 2019 assessments are not exactly the same. While correlated for 1981-2010 (r = `r r_2016_vs_2019`), they diverge a bit at higher values.  These data are the stock-recruitment residuals calculated from the S_R relationship in the 2016 and 2019 assessments.  Some of the parameters differ in those relationships. For exmaple, steepness differs between the 2016 and 2019 assessment models. So the difference could be due to both differenes in the assessment predictions overall and to changes in the stock-recruitmetn relationship.  
+
+The main point here is that the response data change and we might want to know how that influences the model fits both going forward and over the original time period.  
+
+
+```{r Correlation_2016_vs_2919_Resids_plot, fig.height = 4, fig.width = 4, fig.cap='Correlations between residuals for the 2016 and 2019 stock assessments'}
+#### 2016 vs 2019 data ####
+
+x = fish$resids[fish$Year %in% 1981:2010]
+y = fish$resids2019[fish$Year %in% 1981:2010]
+r_2016_vs_2019 = round(cor(x,y),2)
+
+
+plot(x,y, xlab = "2016", ylab = '2019')
+legend('topleft', legend = paste0('r^2 = ',r_2016_vs_2019), bty='n')
+
+
+```
+
+## Model comparisons for changes in recrutiment residuals and ROMS input
+
+I fit a bunch of models to look at how both changing the source of the resisuals (2016 or 2019 assessment) and updated the ROMS predictors affect the mode performance and results. First, fit model using the best-fit terms to: 
+
+(1) 2016 assessment data for 1981-2010. This is the original best-fit model. Included here for reference.
+
+(2) 2016 assessment data for 1981-2015. This uses the updated ROMS predictors through 2015 to determine how the original data fit when adding years.  That is: is the relationship stable if we move forward in time.
+
+(3) 2019 assessment data for 1981-2018.  Again, does the relationship stay stable given an update in the assessment data and the ROMS data (from 2011 forward)
+
+
+
+```{r Initial_Statistics}
+
+################### STATISTICS ############################################
+
+#### refit original best-fit model ####################
+# r = recrutment source 2016 or 2019 assessments
+# f = fit to what years
+
+#### original best-fit model 
+
+m_r2016_f1981_2010 = lm(resids ~ DDpre + DDegg + CSTegg +  LSTyolk + DDlarv, 
+        data = fish[fish$Year %in% 1981:2010,])
+s_r2016_f1981_2010 = summary(m_r2016_f1981_2010)
+capture.output(s_r2016_f1981_2010, file = 'R_Coefficients_r2016_f1981_2010.txt')
+
+
+#### fit 1980 - 2015, best fit parameters, 2016 resids #############
+
+m_r2016_f1981_2015 = lm(resids ~ DDpre + DDegg + CSTegg +  LSTyolk + DDlarv, 
+           data = fish[fish$Year %in% 1981:2015,])
+s_r2016_f1981_2015 = summary(m_r2016_f1981_2015)
+capture.output(s_r2016_f1981_2015, file = 'R_Coefficients_r2016_f1981_2015.txt')
+
+##### fit 1980 - 2019, SR Resids ######################
+
+m_r2019_f1981_2018 = lm(resids2019 ~ DDpre + DDegg + CSTegg +  LSTyolk + DDlarv, 
+           data = fish[fish$Year %in% 1981:2018,])
+s_r2019_f1981_2018 = summary(m_r2019_f1981_2018)
+capture.output(s_r2016_f1981_2015, file = 'R_Coefficients_r2019_f1981_2018.txt')
+
+
+#### refit original best-fit model to 2019 data for 1981-2010 ###################
+# how does updating the assessment model affect fit
+
+m_r2019_f1981_2010 = lm(resids2019 ~ DDpre + DDegg + CSTegg +  LSTyolk + DDlarv, 
+           data = fish[fish$Year %in% 1981:2010,])
+s_r2019_f1981_2010 = summary(m_r2019_f1981_2010)
+capture.output(s_r2019_f1981_2010, file = 'R_Coefficients_r2019_f1981_2018.txt')
+
+```
+
+The results are disappointing.  The original best-fit model explained `r round(s_r2016_f1981_2010$r.squared,2)*100` % of the variation in recruitment residuals.  Running the updated ROMS model through 2015 saw the r^2^ value drop to 
+r^2^ = `r round(s_r2016_f1981_2015$r.squared,2)`.  Using the 2019 assessment data saw the r^2^ drop to 
+r^2^ = `r round(s_r2019_f1981_2018$r.squared,2)`.
+
+
+```{r Model_Fits_Plots, fig.height = 7, fig.width = 5, fig.cap='Model fits for three different models. Solid line is the model prediction +/- 95% CL. Points are residuals from the sablfish assessment'}
+# these figures show how each full model did. That is shows model fit NOT forecasting.
+
+# best fit old 
+predict.years0 = 1981:2010
+new.data = ROMS[ROMS$Year %in% predict.years0,
+                c('Year','DDpre','CSTegg','DDegg','LSTyolk','DDlarv')]
+p_r2016_f1981_2010_p1981_2010 = predict(m_r2016_f1981_2010, newdata = new.data, se.fit = TRUE)
+
+#### Run best-fit model to 2010, predict to 2015 ####
+# all 2016 assessment data
+
+predict.years1 = 1981:2015
+new.data = ROMS[ROMS$Year %in% predict.years1,
+                c('Year','DDpre','CSTegg','DDegg','LSTyolk','DDlarv')]
+p_r2016_f1981_2015_p1981_2015 = predict(m_r2016_f1981_2015, newdata = new.data, se.fit = TRUE)
+
+
+predict.years1 = 1981:2018
+new.data = ROMS[ROMS$Year %in% predict.years1,
+                c('Year','DDpre','CSTegg','DDegg','LSTyolk','DDlarv')]
+p_r2019_f1981_2018_p1981_2018 = predict(m_r2019_f1981_2018, newdata = new.data, se.fit = TRUE)
+
+
+# plotting function
+
+PlotFits <- function (Predicted_Residuals, YEARS, RESIDS){
+  p1 = Predicted_Residuals
+  xy = fish[fish$Year %in% YEARS,]
+  ymin = min(p1$fit-1.96*p1$se.fit)
+  ymax = max(p1$fit+1.96*p1$se.fit)
+
+  plot(xy$Year, xy[,RESIDS], type='p', xlim = c(1980,2020), ylim=c(ymin, ymax), 
+     xlab="Year", ylab = 'Recruitment residuals', pch=19, cex=1)
+  lines(YEARS,p1$fit)
+  lines(YEARS,p1$fit+1.96*p1$se.fit, lty='dotted')
+  lines(YEARS,p1$fit-1.96*p1$se.fit, lty='dotted')
+  axis(side=1, labels=FALSE, at=1980:2020, tick = TRUE, tck = -0.01)
+  axis(side=1, labels=FALSE, at=seq(1980,2020,5), tick = TRUE, tck = -0.05)
+  
+}
+
+par( mfrow = c( 3,1))
+legend.cex = 0.7
+
+PlotFits(p_r2016_f1981_2010_p1981_2010, 1981:2010, 'resids')
+legend('topleft', legend = "a) Fit: 1981 to 2010, 2016 assessment", bty='n', cex = legend.cex)
+
+PlotFits(p_r2016_f1981_2015_p1981_2015, 1981:2015, 'resids')
+legend('topleft', legend = "b) Fit: 1981 to 2015, 2016 assessment", bty='n', cex = legend.cex)
+
+PlotFits(p_r2019_f1981_2018_p1981_2018, 1981:2018, 'resids2019')
+legend('topleft', legend = "c) Fit: 1981 to 2018, 2019 assessment", bty='n', cex = legend.cex)
+
+
+```
+
+I also looked at how well the models forecast from 2010 through 2018.  Partly this examines whether the models do a good or crappy job of forecasting. Partly it looks at whether the environemnt-recruitment relationship holds up once we add new ROMS data (for 2011 - 2018).
+
+```{r Model_Forecasts, fig.height = 7, fig.width = 5, fig.cap='Model fits for two different models. Solid line is the model prediction +/- 95% CL. Points are residuals from the sablfish assessment' }
+
+
+#### Run best-fit model to 2010, predict to 2019 ####
+
+#  2016 assessment data
+
+yrs = 1981:2018
+new.data = ROMS[ROMS$Year %in% yrs,
+                c('Year','DDpre','CSTegg','DDegg','LSTyolk','DDlarv')]
+p_r2016_f1981_2010_p1981_2018 = predict(m_r2016_f1981_2010, newdata = new.data, se.fit = TRUE)
+
+
+# 2019 data 
+
+
+### fit to 1980 to 2018 data; 2019 assessment residuals ####
+yrs = 1981:2018
+new.data = ROMS[ROMS$Year %in% yrs,
+                c('Year','DDpre','CSTegg','DDegg','LSTyolk','DDlarv')]
+p_r2019_f1981_2010_p1981_2018 = predict(m_r2019_f1981_2010, newdata = new.data, se.fit = TRUE)
+####### Plot output ####
+
+# plot forecasts 
+par( mfrow = c(2,1))
+PlotFits(p_r2016_f1981_2010_p1981_2018, 1981:2018, 'resids')
+legend('topleft', legend = "a) Fit: 1981 to 2010, 2016 assessment", bty='n', cex = legend.cex)
+segments(2010, par()$usr[3],2010, par()$usr[4], lty = "dotted")
+
+PlotFits(p_r2019_f1981_2010_p1981_2018, 1981:2018, 'resids2019')
+legend('topleft', legend = "b) Fit: 1981 to 2010, 2019 assessment", bty='n', cex = legend.cex)
+segments(2010, par()$usr[3],2010, par()$usr[4], lty = "dotted")
+
+
+####################
+
+```
+
+Because updating the ROMS parameters involved an altered model (new inputs for 2011 forward), the ROMS data might differ in some way.  A change in variance, for example might alter the relationship such that the slope of the relationship was qualitatively the same, but the exact value might differ, disrupting the relationship and lower the r^2^.  Therefore, I tried including a time blcok as a fixed, categorical factor with an interaction to allow different relationships (an coefficients) for each ROMS predictor before and after the ROMS model update. So, the time series are 1981-2010 and 2011 to `r max(fish$years)`
+
+```{r Add_Time_Block_w_Interations, echo = FALSE, include = FALSE}
+fish$block <- ifelse(fish$Year < 2011, "Old", "New")
+fishb = fish[fish$Year %in% 1981:2018, ]
+fit = lm(resids2019 ~ DDpre + DDegg + CSTegg +  LSTyolk + DDlarv + 
+             block + block:DDpre + block:DDegg + block:CSTegg + block:LSTyolk + block:DDlarv,
+           data = fishb, na.action = na.fail)
+
+#####
+# nrow(fishb)/5
+library(MuMIn)
+
+# 
+mtable = dredge(fit, rank = AICc, m.lim = c(NA, 7),
+                subset = 
+                  dc(block, DDpre, block:DDpre) &&
+                  dc(block, DDegg, block:DDegg) &&
+                  dc(block, CSTegg, block:CSTegg) &&
+                  dc(block, LSTyolk, block:Lstyolk) &&
+                  dc(block, DDlarv, block:DDlarv),
+                extra = list(R2 = function(x)
+                  summary(x)$r.squared[[1]], 
+                  F = function(y)
+                    summary(y)$fstatistic[[1]]),
+                    trace=2 )
+
+mtable2 = subset(mtable, delta<2)
+# mtable2
+
+```
+
+```{r Plot_Time_Block_Results, fig.height = 4, fig.width = 5, fig.cap='Solid line is the model prediction +/- 95% CL. Points are residuals from the sablfish assessment'}
+#### Fit 
+
+m1 = lm(resids2019 ~   block + DDegg + DDpre + LSTyolk +
+          block:DDegg + block:DDpre + block:LSTyolk,        
+          data = fishb, na.action = na.fail)
+s1 = summary(m1)
+s1
+
+p1 = predict(m1, se.fit = TRUE)
+
+ymin = min( p1$fit-1.96*p1$se.fit )
+ymax = max( p1$fit+1.96*p1$se.fit )
+
+plot(fishb$Year, fishb$resids2019, pch = 19,
+     xlab = NA, ylab = "Residuals", ylim = c(ymin, ymax))
+lines(fishb$Year, p1$fit+1.96*p1$se.fit, lty = 'dotted')
+lines(fishb$Year, p1$fit-1.96*p1$se.fit, lty = 'dotted')
+lines(fishb$Year, p1$fit, lty = 'solid')
+axis(side = 1, at = 1980:2020, labels = NA, tck = -0.02)
+legend('topleft', legend = '1981 to 2018; with time block; r^2 = 0.47', bty = 'n')
+legend('topleft', 
+       legend = 'block + DDegg + DDpre + LSTyolk +  block:DDegg + block:DDpre + block:LSTyolk', 
+       bty = 'n', inset = c(0,0.1), cex = 0.5)
+
+
+
+```
+
+Adding the block "helped" raising the r^2^ to r^2^ = `r round(s1$r.squared,2)`.  However, there are a lot of terms in the model, so the results are not totally sound from this analysis.  I also looked at the effect in another way.  Here, fit the best-fit model to the 2019 assessment residuals for 1981-2010.  I then iteratively added one year at a time to look at when there might be any major changes in the coefficients and, therefore, the relationship between the ROMS drivers and sablefish recruitment. In particular, it allowed the model to predict high recruitment in 2016. The model still misses some low recruitments in 2006, 2007, 2011 and 2012, which is disappointing.
+
+Around the blob years (or slightly earlier for some drivers), the signs of the coefficients switch for DDpre (2013), DDegg(2016), and CSTegg(2016).  While the values change the signs for the coefficients for LSTyolk and DDlarv stay consistent from 2010 to 2018, when adding one year at a time to the data.   
+
+
+
+```{r Itaratively_Add_Years}
+
+######## Fit 1981-2010 to 2019 resids, iteratively add one year at a time ####
+
+# when does the relationship change?
+
+
+n = 2010:2018
+x = NA
+for(i in 1:length(n)){
+  yrs = 1981:n[i]
+  mx = lm(resids2019 ~ DDpre + DDegg + CSTegg +  LSTyolk + DDlarv, 
+        data = fish[fish$Year %in% yrs,])
+  sx = coefficients(summary(mx))
+  if(i == 1){
+    x = data.frame(cbind(rownames(sx), sx[,1]))
+  }else{x = cbind(x,sx[,1])}
+  colnames(x)[i+1] = paste0("Y",n[i])
+} # end i
+colnames(x)[1] ="Terms"
+
+
+Model_Coeff_Through_Time = x
+Model_Coeff_Through_Time
+write.csv(Model_Coeff_Through_Time, "Model_Coeff_Through_Time.csv", row.names = FALSE)
+
+```
+
+
+I also quickly looked at dropping 2016, which was a blob year with projected low recruitment, but in which the assessment observed high age-0 abundance.  Thus, with the blob etc, this might be an anomalous year for some reason not caught in our ROMS predictors. Just dropping the 'blob year' (here defined as 2016 since it was an outlier on the nMDS) did not help. 
+
+```{r Drop_Blob_year_2016, fig.height = 4, fig.width=5, fig.cap='Model fit dropping 2016'}
+
+yrs = c(1981:2015, 2017:2018)
+m3 = lm(resids2019 ~ DDpre + DDegg + CSTegg +  LSTyolk + DDlarv, 
+        data = fish[fish$Year %in% yrs,])
+s3 = summary(m3)
+s3
+
+predict.years_m3 = yrs
+new.data = ROMS[ROMS$Year %in% predict.years_m3,
+                c('Year','DDpre','CSTegg','DDegg','LSTyolk','DDlarv')]
+p3 = predict(m3, newdata = new.data, se.fit = TRUE)
+
+ymin = min( p3$fit-1.96*p3$se.fit )
+ymax = max( p3$fit+1.96*p3$se.fit )
+
+plot(yrs, p3$fit, type = 'l', ylim = c(ymin, ymax))
+points(yrs, fish$resids2019[fish$Year %in% yrs])
+lines(yrs, p3$fit+p3$se.fit, lty = 'dotted')
+lines(yrs, p3$fit-p3$se.fit, lty = 'dotted')
+
+
+
+```
+
+The r^2^ remained low: r^2^ = `r round(s3$r.squared,2)`.  
+
+***  
+
+Allowing quadratic terms does not help. The quadratic term would allow for the relationshop to switch as the predictor got very big or small.  
+
+
+
+```{r quadratic_terms}
+dx = fish[fish$Year %in% 1981:2018,]
+
+fit = lm(resids2019 ~ DDpre + DDegg + CSTegg +  LSTyolk + DDlarv 
+                      + I(DDpre^2) + I(DDegg^2) + I(CSTegg) + I(LSTyolk^2) + I(DDlarv^2),
+            na.action = na.fail, data= dx)
+
+#####
+# nrow(fishb)/5
+library(MuMIn)
+
+# 
+mtable = dredge(fit, rank = AICc, m.lim = c(NA, 7),
+                subset = 
+                  dc(DDpre, I(DDpre^2)) &&
+                  dc(DDegg, I(DDegg^2)) &&
+                  dc(CSTegg, I(CSTegg^2)) &&
+                  dc(LSTyolk, I(LSTyolk^2)) &&
+                  dc(DDlarv, I(DDlarv^2)) ,
+                extra = list(R2 = function(x)
+                  summary(x)$r.squared[[1]], 
+                  F = function(y)
+                    summary(y)$fstatistic[[1]]),
+                    trace=2 )
+
+mtable2 = subset(mtable, delta<2)
+
+mtable2
+
+
+```
+
+
+***  
+
+
+Likewise, adding smoothed terms in a GAM does not improve the model, nor does it suggest that the terms are non-linear.  
+
+
+
+
+```{r GAMS}
+library(mgcv)
+
+fit = gam(resids2019 ~ s(DDpre) + s(DDegg) +  CSTegg + LSTyolk + s(DDlarv), data =fish[fish$Year %in% 1981:2019,])
+summary(fit)
+
+par( mfrow = c(3,1) )
+plot(fit)
+
+
+
+```
+
+
+## What's next?
+
+I'm not really sure what analyses to do next with the existing data.  I would appreciate any thoughts. Some ideas:
+
+(1) An obvious thing to do would be to check in with Chris Edwards (hence the email) regarding the state of the ROMS model. As I remember it, the ROMS output we received at the time was somewhat preliminary and an attempt to get us something before the stock assessment was due. The data at the time also only ran through 2018.  So, if the data available, it would be worthwhile to get the updated ROMS predictors through 2019, as we have sablefish recruitment recruitment info through then. 
+
+(2) It might be worthwhile to look at all the original predictors, not just the final five in the recriutment model. We could then re-do the model fitting process and see if we come up with the same best-fit model (unlikely given that the current update through 2018 fits poorly), or whether the blob years upset the relatinship and changed the base predictors.  This change might be informative for sablefish ecology in some way.
+
+(3) We might also check with Chris E regarding any thoughts he has on changes in the model output.  There do seem to be some changes in the median/mean values, but the blob is an obvious explanation for those changes.  I don't see beg changes in variance or something like that, which would suggest some sort of fundamental change in the model, but might be good to talk it out. My guess is that the failure of the updated ROMS time series to predict sablefish recruitment is due to entirely different oceanic conditions around the blob years, not changes in ROMS model.   
+
+(4) One area that continues to bother me is 2006, 2007 and now 2011 and 2012.  The model overpredicts these years.  The SSH model also overpredicts 2006 and 2007.  It would be nice to figure out why.  Female (age7+) condition was low in 2006 and 2007, but that wouldn't seem to explain the low recruitment as their condition is low after the fact.  
+
+End of my thoughts.
+
+
+
+
+
+
+
+
+

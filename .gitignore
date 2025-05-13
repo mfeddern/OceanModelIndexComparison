@@ -1,6 +1,9 @@
 # Mac system files
 .DS_store
 
+# Jupyter Notebook
+.ipynb_checkpoints
+
 # History files
 .Rhistory
 .Rapp.history

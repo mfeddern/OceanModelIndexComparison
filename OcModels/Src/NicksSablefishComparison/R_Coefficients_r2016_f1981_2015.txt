@@ -1,0 +1,24 @@
+
+Call:
+lm(formula = resids ~ DDpre + DDegg + CSTegg + LSTyolk + DDlarv, 
+    data = fish[fish$Year %in% 1981:2015, ])
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+-15974  -7765  -2096   4740  31067 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)  
+(Intercept) -8948.35   26696.44  -0.335   0.7399  
+DDpre          22.39     189.49   0.118   0.9068  
+DDegg         513.16     365.75   1.403   0.1712  
+CSTegg       9100.65   32230.50   0.282   0.7797  
+LSTyolk     11220.71   16653.62   0.674   0.5058  
+DDlarv       -206.40     114.07  -1.809   0.0808 .
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 10650 on 29 degrees of freedom
+Multiple R-squared:  0.1703,	Adjusted R-squared:  0.02722 
+F-statistic:  1.19 on 5 and 29 DF,  p-value: 0.3382
+

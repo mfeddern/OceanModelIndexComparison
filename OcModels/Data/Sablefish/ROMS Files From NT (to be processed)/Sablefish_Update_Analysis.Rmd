@@ -1,6 +1,6 @@
 ---
 title: "Sablefish Update Analysis"
-output: html_document
+output: pdf
 ---
 
 ```{r setup, include=FALSE}

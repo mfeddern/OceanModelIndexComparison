@@ -8,4 +8,7 @@ dependencies:
   - matplotlib
   - folium
   - jupyter
+  - scipy
+  - h5netcdf
+  - wget
 prefix: /opt/miniconda3/envs/OceanModelIndexComparison

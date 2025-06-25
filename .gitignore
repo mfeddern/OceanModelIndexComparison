@@ -1,6 +1,9 @@
 # Mac system files
 .DS_store
 
+# Net CDF files
+*.nc
+
 # Jupyter Notebook
 .ipynb_checkpoints
 

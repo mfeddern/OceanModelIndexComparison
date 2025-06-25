@@ -3,10 +3,11 @@ title: "Yellow Tail GLORY & MOM6"
 output: html_notebook
 ---
 
-```{r packages}
+```{r packages, message=FALSE, warning=FALSE, include=FALSE}
 library(dplyr)
 library(ggplot2)
 library(tidyverse)
+library(here) 
 ```
 
 
@@ -16,39 +17,26 @@ rm(list = ls())
 
 
 ```{r read in Glory Yellow Tail Data}
-Full_Glory_Yellow_Tail.df <- read.csv("2024Env-annual-yellowtail_GLORYS_UNSTANDARDIZED.csv")
+
+Full_Glory_Yellow_Tail.df <- read.csv(
+  here("Data", "Yellowtail", "2024Env-annual-yellowtail_GLORYS_UNSTANDARDIZED.csv")
+)
+
 head(Full_Glory_Yellow_Tail.df)
-```
-
-```{r}
-###Dat
-###Pivot Longer(names_to, variable)
-### Use variables that MOM6 and Glory have together
-```
-
-
-```{r}
-Yt_temp <- Full_Glory_Yellow_Tail.df %>% filter(year >= 2010 & year <= 2020) %>%
-
-select(year, DDegg)
-
-head(Yt_temp)
 
 ```
 
-```{r Year/Temp Plot}
-Yt_temp %>%
-  ggplot(aes(x = year, y = DDegg)) +
-  geom_point() + 
-  geom_line() +
-  labs(title = "Temp over the Years", x = "Years", y = "Temp") + 
-  theme_minimal() 
-```
+
+
 ```{r Bring in MOM6 Data}
-Full_MOM6_Yellow_Tail.df <- read.csv("yellowtail_MOM6.csv")
+Full_MOM6_Yellow_Tail.df <- read.csv(
+  here("Data", "Yellowtail", "yellowtail_MOM6.csv"))
 
 head(Full_MOM6_Yellow_Tail.df)
 ```
+
+
+
 
 ```{r Filter GLORY Variables}
 
@@ -57,20 +45,21 @@ Filtered_Glory_Yellow_Tail.df <- Full_Glory_Yellow_Tail.df %>% select(year, Tcop
 
 ```
 
-```{r}
+
+
+```{r Make GLORY data long}
 GYL_datalong <- Filtered_Glory_Yellow_Tail.df %>%
   pivot_longer(
-    cols = c(year, Tcop, Tpart, MLDpart, MLDlarv, MLDpjuv, CSTlarv, CSTpjuv, LSTlarv, LSTpjuv),
+    cols = c( Tcop, Tpart, MLDpart, MLDlarv, MLDpjuv, CSTlarv, CSTpjuv, LSTlarv, LSTpjuv),
     names_to = "variable",
     values_to = "value"
   ) %>%
   mutate(source = "GLORYs")
 
+print(GYL_datalong)
 
 ```
 
-
-###How do I fix the years in these??? Showing up as long exponents
 
 ```{r Filter MOM6 Variables }
 
@@ -78,23 +67,50 @@ Filtered_MOM6_Yellow_Tail.df <- Full_MOM6_Yellow_Tail.df%>% select(year, Tcop, T
 
 ```
 
-```{r}
+```{r Renaming MOM6 Variables to match GLORY Variable Names}
+
+Filtered_MOM6_Yellow_Tail.df <- Filtered_MOM6_Yellow_Tail.df %>%
+
+
+  rename(
+    CSTlarv = XVlarv,
+    CSTpjuv = XVpjuv,
+    LSTlarv = YVlarv,
+    LSTpjuv = YVpjuv
+  )
+
+print(Filtered_MOM6_Yellow_Tail.df)
+```
+
+
+
+```{r Make MOM6 data long}
 MOM6YL_datalong <- Filtered_MOM6_Yellow_Tail.df %>%
   pivot_longer(
-    cols = c(year, Tcop, Tpart, MLDpart, MLDlarv, MLDpjuv,XVlarv, XVpjuv, YVlarv, YVpjuv),
+    cols = c( Tcop, Tpart, MLDpart,MLDlarv, MLDpjuv, CSTlarv, CSTpjuv,LSTlarv, LSTpjuv, LSTlarv, LSTpjuv),
     names_to = "variable",
     values_to = "value"
   ) %>%
   mutate(source = "MOM6")
+
+print(MOM6YL_datalong)
 ```
 
 
+```{r Combining Datasets}
 
+combined_models <- rbind(GYL_datalong, MOM6YL_datalong)
 
-
-```{r Combine Datasets}
-
-###Question would it be better for me to rename the coulmn names to be the same so I can merge them or?
+head(combined_models)
 
 ```
 
+
+```{r Sample Plot}
+combined_models %>%
+  ggplot(aes(x = year, y = source)) +
+  geom_point() + 
+  geom_line() +
+  labs(title = "Temp over the Years", x = "Years", y = "Temp") + 
+  theme_minimal() 
+```

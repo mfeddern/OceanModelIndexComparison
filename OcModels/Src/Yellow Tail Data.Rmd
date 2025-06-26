@@ -106,11 +106,38 @@ head(combined_models)
 ```
 
 
-```{r Sample Plot}
+```{r Tcop Plot, echo=FALSE, message=FALSE, warning=FALSE}
+
 combined_models %>%
-  ggplot(aes(x = year, y = source)) +
+  filter(variable == "Tcop") %>%
+  ggplot(aes(x = year, y = value, color = source)) +
   geom_point() + 
-  geom_line() +
-  labs(title = "Temp over the Years", x = "Years", y = "Temp") + 
-  theme_minimal() 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 5 )) +
+  labs(title = "Temporal Comparison of Temperature Cues for Co-Population (Tcop)\nin Northern Yellowtail: GLORYS vs MOM6",
+       y = ("Temperature (°C)"),
+       x = ("Year"),
+       color = ("Ocean Model"))
+
 ```
+
+
+```{r Facet Wrap plots, echo=FALSE, message=FALSE, warning=FALSE}
+
+combined_models %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 10 )) +
+  facet_wrap(~variable, scales = "free_y")+
+labs( color = ("Ocean Model"))
+
+
+```
+
+
+
+
+
+
+

@@ -8,6 +8,7 @@ library(dplyr)
 library(ggplot2)
 library(tidyverse)
 library(here) 
+library(patchwork)
 ```
 
 
@@ -137,7 +138,206 @@ labs( color = ("Ocean Model"))
 
 
 
+```{r GLORY Data Pre 2010}
+Pre2010_GLORY_YT <- GYL_datalong %>% 
+  filter(year >= 1993 & year <= 2010) %>%
+
+print(Pre2010_GLORY_YT)
+
+```
+
+```{r GLORY Data Post 2010}
+Post2010_GLORY_YT <- GYL_datalong %>% 
+  filter(year >= 2010 & year <= 2025) %>%
+
+print(Post2010_GLORY_YT)
+
+```
 
 
+```{r MOM6 Data Pre 2010}
+Pre2010_MOM6_YT <- MOM6YL_datalong %>% 
+  filter(year >= 1993 & year <= 2010) %>%
+
+print(Pre2010_MOM6_YT)
+
+```
+
+```{r MOM6 Data post 2010}
+Post2010_MOM6_YT <- MOM6YL_datalong %>% 
+  filter(year >= 2010 & year <= 2025) %>%
+
+print(Post2010_MOM6_YT)
+
+```
+
+
+
+
+```{r Combining Pre 2010 Datasets}
+
+pre2010_combined_models <- rbind(Pre2010_GLORY_YT, Pre2010_MOM6_YT)
+
+head(combined_models)
+
+```
+
+
+```{r Combining Post 2010 Datasets}
+
+post2010_combined_models <- rbind(Post2010_GLORY_YT, Post2010_MOM6_YT)
+
+head(combined_models)
+
+```
+
+
+```{r Pre-2010 Tcop Plot, echo=FALSE, message=FALSE, warning=FALSE}
+
+pre2010_combined_models %>%
+  filter(variable == "Tcop") %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2 )) +
+  labs(title = "Pre-2010 Temporal Comparison of Temperature Cues for Co-Population (Tcop)\nin Northern Yellowtail: GLORYS vs MOM6",
+       y = ("Temperature (°C)"),
+       x = ("Year"),
+       color = ("Ocean Model"))
+
+```
+
+
+
+```{r Post-2010 Tcop Plot, echo=FALSE, message=FALSE, warning=FALSE}
+
+post2010_combined_models %>%
+  filter(variable == "Tcop") %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2 )) +
+  labs(title = "Pre-2010 Temporal Comparison of Temperature Cues for Co-Population (Tcop)\nin Northern Yellowtail: GLORYS vs MOM6",
+       y = ("Temperature (°C)"),
+       x = ("Year"),
+       color = ("Ocean Model"))
+
+```
+
+
+
+```{r combined pre/post 2010 Yellow Tail Tcop Plots, echo=FALSE, message=FALSE, warning=FALSE}
+
+p1 <- pre2010_combined_models %>%
+  filter(variable == "Tcop") %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2 )) +
+  labs(title = "Pre-2010 Temporal Comparison of Temperature Cues for Co-Population (Tcop)\nNorthern Yellowtail: GLORYS vs MOM6",
+       y = "Temperature (°C)",
+       x = "Year",
+       color = "Ocean Model")+ 
+  
+  ggtitle("Pre-2010 Temperature Cues for Co-Population (Tcop)",
+          subtitle = "Northern Yellowtail: GLORYS vs MOM6") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold"),
+    plot.subtitle = element_text(size = 10)
+  )
+
+p2 <- post2010_combined_models %>%
+  filter(variable == "Tcop") %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2 )) +
+  labs(title = "Post-2010 Temporal Comparison of Temperature Cues for Co-Population (Tcop)\nNorthern Yellowtail: GLORYS vs MOM6",
+       y = "Temperature (°C)",
+       x = "Year",
+       color = "Ocean Model") + ggtitle("Post-2010 Temperature Cues for Co-Population (Tcop)",
+          subtitle = "Northern Yellowtail: GLORYS vs MOM6") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold"),
+    plot.subtitle = element_text(size = 10)
+  )
+
+
+p1 / p2
+```
+
+```{r Pre-2010 Facet Wrap Yellow Tail, echo=FALSE, message=FALSE, warning=FALSE}
+pre2010_combined_models %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 5 )) +
+  facet_wrap(~variable, scales = "free_y")+
+labs( color = ("Ocean Model")) + ggtitle("Pre-2010 Oceanographic Variables",
+          subtitle = "Northern Yellowtail: GLORYS vs MOM6") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold"),
+    plot.subtitle = element_text(size = 10)
+  )
+```
+
+```{r Post-2010 Facet Wrap Yellow Tail, echo=FALSE, message=FALSE, warning=FALSE}
+post2010_combined_models %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 5 )) +
+  facet_wrap(~variable, scales = "free_y")+
+labs( color = ("Ocean Model")) + ggtitle("Post-2010 Oceanographic Variables",
+          subtitle = "Northern Yellowtail: GLORYS vs MOM6") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold"),
+    plot.subtitle = element_text(size = 10)
+  )
+```
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+###Pre-2010 plot
+p3 <- pre2010_combined_models %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 5 )) +
+  facet_wrap(~variable, scales = "free_y")+
+labs( color = ("Ocean Model")) + ggtitle("Pre-2010 Oceanographic Variables",
+          subtitle = "Northern Yellowtail: GLORYS vs MOM6") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold"),
+    plot.subtitle = element_text(size = 10)
+  )
+
+
+###Post-2010 plot
+p4 <- post2010_combined_models %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 5 )) +
+  facet_wrap(~variable, scales = "free_y")+
+labs( color = ("Ocean Model")) + ggtitle("Post-2010 Oceanographic Variables",
+          subtitle = "Northern Yellowtail: GLORYS vs MOM6") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold"),
+    plot.subtitle = element_text(size = 10)
+  )
+
+
+p3/p4
+
+
+
+```
+
+
+
+
+
+
+```
 
 

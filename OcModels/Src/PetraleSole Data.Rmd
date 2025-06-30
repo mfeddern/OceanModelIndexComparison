@@ -1,0 +1,90 @@
+---
+title: "PetraleSole ROMs vs. GLORY"
+output: html_notebook
+---
+
+
+```{r packages, message=FALSE, warning=FALSE, include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(here) 
+library(patchwork)
+```
+
+```{r clear environment}
+rm(list = ls())
+```
+
+
+###GLORY PetraleSole Data wrangling
+
+```{r read in GLORY PetraloeSole Data}
+
+Full_Glory_Petrale.df <- read.csv(
+  here("Data","PetraleSole","DATA_Combined_glorys_petrale.csv")
+)
+
+head(Full_Glory_Petrale.df)
+
+```
+```{r Filter GLORY Variables}
+
+Filtered_Glory_Petrale.df <- Full_Glory_Petrale.df %>% select(year, DDpre, Tpre.a, Tpre.b, MLDegg, CSTegg1, DDegg1, CSTegg2, LSTegg2, DDegg2, LSTlarv,CSTlarv, DDlarv, LSTpjuv, CSTpjuv, DDpjuv, LSTbjuv.a, CSTbjuv.a, LSTbjuv.b, CSTbjuv.b )
+
+head(Filtered_Glory_Petrale.df)
+
+```
+
+```{r Make GLORY data long}
+Glory_Petrale_datalong <- Filtered_Glory_Petrale.df %>%
+  pivot_longer(
+    cols = c( DDpre, Tpre.a, Tpre.b, MLDegg, CSTegg1, DDegg1, CSTegg2, LSTegg2, DDegg2, LSTlarv,CSTlarv, DDlarv, LSTpjuv, CSTpjuv, DDpjuv, LSTbjuv.a, CSTbjuv.a, LSTbjuv.b, CSTbjuv.b ),
+    names_to = "variable",
+    values_to = "value"
+  ) %>%
+  mutate(source = "GLORYs")
+
+###LSTegg is listed on the Data Availabiliy document but there is no LSTegg column in csv file. there is an LSTegg 2 however
+
+print(Glory_Petrale_datalong)
+
+```
+
+###ROMs PetraleSole data Wrangling
+
+
+```{r read in ROMs PetraloeSole Data}
+
+Full_ROMs_Petrale.df <- read.csv(
+  here("Data","PetraleSole","Petrale-ROMS-data.csv")
+)
+
+head(Full_ROMs_Petrale.df)
+
+```
+
+```{r Filter ROMs Variables}
+
+Filtered_ROMs_Petrale.df <- Full_ROMs_Petrale.df %>% select(year, DDpre, Tpre.a, Tpre.b, MLDegg, CSTegg1, DDegg1, CSTegg2, LSTegg2, DDegg2, LSTlarv,CSTlarv, DDlarv, LSTpjuv, CSTpjuv, DDpjuv, LSTbjuv.a, CSTbjuv.a, LSTbjuv.b, CSTbjuv.b )
+
+head(Filtered_ROMs_Petrale.df)
+
+```
+
+```{r Make ROMs data long}
+ROMs_Petrale_datalong <- Filtered_ROMs_Petrale.df %>%
+  pivot_longer(
+    cols = c( DDpre, Tpre.a, Tpre.b, MLDegg, CSTegg1, DDegg1, CSTegg2, LSTegg2, DDegg2, LSTlarv,CSTlarv, DDlarv, LSTpjuv, CSTpjuv, DDpjuv, LSTbjuv.a, CSTbjuv.a, LSTbjuv.b, CSTbjuv.b ),
+    names_to = "variable",
+    values_to = "value"
+  ) %>%
+  mutate(source = "ROMs")
+
+###LSTegg is listed on the Data Availability document but there is no LSTegg column in csv file, there is an LSTegg 2 however
+
+print(ROMs_Petrale_datalong)
+
+```
+
+

@@ -217,7 +217,7 @@ post2010_combined_models %>%
   geom_point() + 
   geom_line() + 
   scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2 )) +
-  labs(title = "Pre-2010 Temporal Comparison of Temperature Cues for Co-Population (Tcop)\nin Northern Yellowtail: GLORYS vs MOM6",
+  labs(title = "Post-2010 Temporal Comparison of Temperature Cues for Co-Population (Tcop)\nin Northern Yellowtail: GLORYS vs MOM6",
        y = ("Temperature (°C)"),
        x = ("Year"),
        color = ("Ocean Model"))
@@ -329,15 +329,10 @@ labs( color = ("Ocean Model")) + ggtitle("Post-2010 Oceanographic Variables",
 
 p3/p4
 
-
-
-```
-
-
-
-
-
+####How do I fix the scales of these?? Or do we split them up by 3 variables?
 
 ```
+
+
 
 

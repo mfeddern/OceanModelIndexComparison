@@ -1,5 +1,5 @@
 ---
-title: "Yellow Tail GLORY & MOM6"
+title: "Yellow Tail GLORY vs. MOM6"
 output: html_notebook
 ---
 

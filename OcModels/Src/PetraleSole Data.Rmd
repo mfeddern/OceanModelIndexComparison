@@ -66,9 +66,9 @@ head(Full_ROMs_Petrale.df)
 
 ```{r Filter ROMs Variables}
 
-Filtered_ROMs_Petrale.df <- Full_ROMs_Petrale.df %>% select(year, DDpre, Tpre.a, Tpre.b, MLDegg, CSTegg1, DDegg1, CSTegg2, LSTegg2, DDegg2, LSTlarv,CSTlarv, DDlarv, LSTpjuv, CSTpjuv, DDpjuv, LSTbjuv.a, CSTbjuv.a, LSTbjuv.b, CSTbjuv.b ) %>%
+Filtered_ROMs_Petrale.df <- Full_ROMs_Petrale.df %>% select(year, DDpre, Tpre.a, Tpre.b, MLDegg, CSTegg1, DDegg1, CSTegg2, LSTegg2, DDegg2, LSTlarv,CSTlarv, DDlarv, LSTpjuv, CSTpjuv, DDpjuv, LSTbjuv.a, CSTbjuv.a, LSTbjuv.b, CSTbjuv.b ) %>% 
   
-  filter(year)
+  filter(year >= 1993 & year <= 2023) ### Matches ROMs years to the years GLORY dataset had
 
 head(Filtered_ROMs_Petrale.df)
 
@@ -83,7 +83,7 @@ ROMs_Petrale_datalong <- Filtered_ROMs_Petrale.df %>%
   ) %>%
   mutate(source = "ROMs")
 
-###LSTegg is listed on the Data Availability document but there is no LSTegg column in csv file, there is an LSTegg 2 however
+###LSTegg is listed on the Data Availability document but there is no LSTegg column in csv file, there is an LSTegg 2 however (whats the difference??)
 
 print(ROMs_Petrale_datalong)
 
@@ -107,6 +107,69 @@ combined_models %>%
   geom_line() + 
   scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 5 )) +
   labs(title = "Temporal Comparison of Temperature Cues for pre-conditioning (Tpre.a)\nin PetraleSole: GLORYS vs ROMs",
+       y = ("Temperature (°C)"),
+       x = ("Year"),
+       color = ("Ocean Model"))
+```
+
+```{r GLORY Data Pre 2010}
+Pre2010_GLORY_Petrale <- Glory_Petrale_datalong %>% 
+  filter(year >= 1993 & year <= 2010) %>%
+
+print(Pre2010_GLORY_Petrale)
+
+```
+
+```{r GLORY Data Post 2010}
+Post2010_GLORY_Petrale <- Glory_Petrale_datalong %>% 
+  filter(year >= 2010 & year <= 2023) %>%
+
+print(Post2010_GLORY_Petrale)
+
+```
+```{r ROMs Data Pre 2010}
+Pre2010_ROMs_Petrale <- ROMs_Petrale_datalong %>% 
+  filter(year >= 1993 & year <= 2010) %>%
+
+print(Pre2010_ROMs_Petrale)
+
+```
+
+```{r ROMs Data post 2010}
+Post2010_ROMs_Petrale <- ROMs_Petrale_datalong %>% 
+  filter(year >= 2010 & year <= 2023) %>%
+
+print(Post2010_ROMs_Petrale)
+
+```
+
+
+```{r Combining Pre 2010 Datasets}
+
+pre2010_combined_models <- rbind(Pre2010_GLORY_Petrale, Pre2010_ROMs_Petrale)
+
+head(combined_models)
+
+```
+
+
+```{r Combining Post 2010 Datasets}
+
+post2010_combined_models <- rbind(Post2010_ROMs_Petrale, Post2010_ROMs_Petrale)
+
+head(combined_models)
+
+```
+
+```{r Pre-2010 Tcop Plot, echo=FALSE, message=FALSE, warning=FALSE}
+
+pre2010_combined_models %>%
+  filter(variable == "Tpre.a") %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2 )) +
+  labs(title = "Pre-2010 Temporal Comparison of pre-conditioning (Tpre.a)\nin PetraleSole: GLORYS vs ROMs",
        y = ("Temperature (°C)"),
        x = ("Year"),
        color = ("Ocean Model"))

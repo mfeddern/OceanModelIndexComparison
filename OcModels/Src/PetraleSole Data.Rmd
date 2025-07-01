@@ -155,13 +155,13 @@ head(combined_models)
 
 ```{r Combining Post 2010 Datasets}
 
-post2010_combined_models <- rbind(Post2010_ROMs_Petrale, Post2010_ROMs_Petrale)
+post2010_combined_models <- rbind(Post2010_ROMs_Petrale, Post2010_GLORY_Petrale)
 
 head(combined_models)
 
 ```
 
-```{r Pre-2010 Tcop Plot, echo=FALSE, message=FALSE, warning=FALSE}
+```{r Pre-2010 Tpre.a Plot, echo=FALSE, message=FALSE, warning=FALSE}
 
 pre2010_combined_models %>%
   filter(variable == "Tpre.a") %>%
@@ -175,3 +175,141 @@ pre2010_combined_models %>%
        color = ("Ocean Model"))
 
 ```
+
+```{r Post-2010 Tpre.a Plot, echo=FALSE, message=FALSE, warning=FALSE}
+
+post2010_combined_models %>%
+  filter(variable == "Tpre.a") %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2 )) +
+  labs(title = "Post-2010 Temporal Comparison of pre-conditioning (Tpre.a)\nin PetraleSole: GLORYS vs ROMs",
+       y = ("Temperature (°C)"),
+       x = ("Year"),
+       color = ("Ocean Model"))
+
+```
+
+
+```{r Tpre.a Plot all years, echo=FALSE, message=FALSE, warning=FALSE}
+
+combined_models %>%
+  filter(variable == "Tpre.a") %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 5 )) +
+  labs(title = "Temporal Comparison of pre-conditioning (Tpre.a)\nin PetraleSole: GLORYS vs ROMs",
+       y = ("Temperature (°C)"),
+       x = ("Year"),
+       color = ("Ocean Model"))
+
+```
+
+```{r Pre-2010 Facet Wrap PetraleSole, echo=FALSE, message=FALSE, warning=FALSE}
+pre2010_combined_models %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 10 )) +
+  facet_wrap(~variable, scales = "free_y")+
+labs( color = ("Ocean Model")) + ggtitle("Pre-2010 Oceanographic Variables",
+          subtitle = "Northern Yellowtail: GLORYS vs MOM6") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold"),
+    plot.subtitle = element_text(size = 10)
+  )
+
+
+###Major differences between the all the Degree Day Values
+```
+
+```{r Degree Day Variables (DD) Facet Wrap PetraleSole, echo=FALSE, message=FALSE, warning=FALSE}
+
+combined_models %>%
+   filter(variable %in% c("DDegg1", "DDegg2", "DDlarv", "DDpjuv", "DDpre")) %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 10 )) +
+  facet_wrap(~variable, scales = "free_y")+
+labs( color = ("Ocean Model")) + ggtitle("Degree Day Oceanographic Variables",
+          subtitle = "PetraleSole: GLORYS vs MOM6") +
+  theme(
+    plot.title = element_text(size = 12, face = "bold"),
+    plot.subtitle = element_text(size = 10)
+  )
+
+
+###Major differences between the all the Degree Day Values
+```
+
+
+
+
+```{r DDEgg all years, echo=FALSE, message=FALSE, warning=FALSE}
+
+combined_models %>%
+  filter(variable == "DDegg1") %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 5 )) +
+  labs(title = "Temporal Comparison of DDegg \nin PetraleSole: GLORYS vs ROMs",
+       y = ("Temperature (°C)"),
+       x = ("Year"),
+       color = ("Ocean Model"))
+
+```
+
+```{r ROMS DDegg1 , echo=FALSE, message=FALSE, warning=FALSE}
+
+ROMs_Petrale_datalong %>%
+  filter(variable == "DDegg1") %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 5 )) +
+  labs(title = "DDEgg 1 PetraleSole ROMs",
+       y = ("Temperature (°C)"),
+       x = ("Year"),
+       color = ("Ocean Model"))
+
+```
+```{r DDegg1 Plot all years, echo=FALSE, message=FALSE, warning=FALSE}
+
+ddegg11 <- Glory_Petrale_datalong %>%
+  filter(variable == "DDegg1") %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+   scale_color_manual(values = c("GLORYs" = "slateblue"))+
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 5 )) +
+  labs(title = "DDegg1 of PetraleSole: GLORYS",
+       y = ("Temperature (°C)"),
+       x = ("Year"),
+       color = ("Ocean Model"))
+
+
+ddegg12 <- ROMs_Petrale_datalong %>%
+  filter(variable == "DDegg1") %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+    scale_color_manual(values = c("ROMs" = "indianred2"))+
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 5 )) +
+  labs(title = "DDegg1 of PetraleSole: ROMS",
+       y = ("Temperature (°C)"),
+       x = ("Year"),
+       color = ("Ocean Model"))
+
+ddegg11 / ddegg12
+
+###Are they in different units by chance??
+###Explanation of DDEgg...(Is it the temp of water during the egg cycle?)
+
+
+```
+
+

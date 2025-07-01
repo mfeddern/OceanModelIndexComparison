@@ -25,6 +25,10 @@ Full_Glory_Petrale.df <- read.csv(
   here("Data","PetraleSole","DATA_Combined_glorys_petrale.csv")
 )
 
+
+###Standardize the csv files by columns for each variable
+###Function = Stand
+
 head(Full_Glory_Petrale.df)
 
 ```
@@ -223,6 +227,8 @@ labs( color = ("Ocean Model")) + ggtitle("Pre-2010 Oceanographic Variables",
 
 
 ###Major differences between the all the Degree Day Values
+
+###What's the difference between a and b in variables??
 ```
 
 ```{r Degree Day Variables (DD) Facet Wrap PetraleSole, echo=FALSE, message=FALSE, warning=FALSE}

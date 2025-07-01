@@ -9,6 +9,7 @@ library(ggplot2)
 library(tidyverse)
 library(here) 
 library(patchwork)
+library(standardize)
 ```
 
 
@@ -23,6 +24,8 @@ Full_Glory_Yellow_Tail.df <- read.csv(
   here("Data", "Yellowtail", "2024Env-annual-yellowtail_GLORYS_UNSTANDARDIZED.csv")
 )
 
+standardize(Full_Glory_Yellow_Tail.df)
+
 head(Full_Glory_Yellow_Tail.df)
 
 ```
@@ -32,6 +35,7 @@ head(Full_Glory_Yellow_Tail.df)
 ```{r Bring in MOM6 Data}
 Full_MOM6_Yellow_Tail.df <- read.csv(
   here("Data", "Yellowtail", "yellowtail_MOM6.csv"))
+
 
 head(Full_MOM6_Yellow_Tail.df)
 ```
@@ -114,7 +118,7 @@ combined_models %>%
   ggplot(aes(x = year, y = value, color = source)) +
   geom_point() + 
   geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 5 )) +
+  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 3 )) +
   labs(title = "Temporal Comparison of Temperature Cues for Co-Population (Tcop)\nin Northern Yellowtail: GLORYS vs MOM6",
        y = ("Temperature (°C)"),
        x = ("Year"),
@@ -217,7 +221,7 @@ post2010_combined_models %>%
   geom_point() + 
   geom_line() + 
   scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2 )) +
-  labs(title = "Post-2010 Temporal Comparison of Temperature Cues for Co-Population (Tcop)\nin Northern Yellowtail: GLORYS vs MOM6",
+  labs(title = "Post-2010 Temporal Comparison of Temperature Cues for Copulation (Tcop)\nin Northern Yellowtail: GLORYS vs MOM6",
        y = ("Temperature (°C)"),
        x = ("Year"),
        color = ("Ocean Model"))

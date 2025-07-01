@@ -12,7 +12,7 @@ library(here)
 library(patchwork)
 ```
 
-Here are a few different ways we can scale the data, the first is using a loop, which are incredibly versatile BUT kinda tricky to wrap your head around. (Here is more info)[https://intro2r.com/prog_r.html] on loops that is a good reference
+Here are a few different ways we can scale the data, the first is using a loop, which are incredibly versatile BUT kinda tricky to wrap your head around. [Here is more info](https://intro2r.com/prog_r.html) on loops that is a good reference
 
 ## Loop
 
@@ -52,7 +52,7 @@ colMeans(stand_dat)
 apply(stand_dat, 2, sd)
 ```
 
-The means of each column is pretty close to 0! And the sd is as well!
+The means of each column is pretty close to 0! And the sd is 1 as well which is what we want!
 
 ## Apply
 

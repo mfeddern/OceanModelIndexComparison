@@ -9,6 +9,7 @@ library(ggplot2)
 library(tidyverse)
 library(here) 
 library(patchwork)
+library(standardize)
 ```
 
 
@@ -23,6 +24,8 @@ Full_Glory_Yellow_Tail.df <- read.csv(
   here("Data", "Yellowtail", "2024Env-annual-yellowtail_GLORYS_UNSTANDARDIZED.csv")
 )
 
+standardize(Full_Glory_Yellow_Tail.df)
+
 head(Full_Glory_Yellow_Tail.df)
 
 ```
@@ -32,6 +35,7 @@ head(Full_Glory_Yellow_Tail.df)
 ```{r Bring in MOM6 Data}
 Full_MOM6_Yellow_Tail.df <- read.csv(
   here("Data", "Yellowtail", "yellowtail_MOM6.csv"))
+
 
 head(Full_MOM6_Yellow_Tail.df)
 ```

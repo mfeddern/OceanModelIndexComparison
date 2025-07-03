@@ -1,0 +1,95 @@
+---
+title: "Standardizing Data"
+format: pdf
+editor: visual
+---
+
+```{r packages, message=FALSE, warning=FALSE, include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(here) 
+library(patchwork)
+```
+
+Here are a few different ways we can scale the data, the first is using a loop, which are incredibly versatile BUT kinda tricky to wrap your head around. [Here is more info](https://intro2r.com/prog_r.html) on loops that is a good reference
+
+## Loop
+
+First, lets read in the data:
+
+```{r}
+dat<- read.csv(
+  here("Data", "Yellowtail", "2024Env-annual-yellowtail_GLORYS_UNSTANDARDIZED.csv")
+)%>%
+  filter(year>=1998&year<=2021) # lets filter the data so we dont have any missing values
+
+```
+
+Now, lets create a dataframe. We will "fill" this dataframe using a loop
+
+```{r}
+stand_dat <-dat #using the same shape as dat will also let us retain the column names
+```
+
+Now we can create the actual loop:
+
+```{r}
+#i is what we want the loop to iterate over, in this case i is columns. If we want the 
+# loop to loop over every column, we can start it at 1 and go to the total number
+# of columns. ncol() is a function that counts the number of columns in a dataframe
+# so in this case we will loop from column 1 to the last column
+
+for(i in 1:ncol(dat)){
+ stand_dat[,i]<- (dat[,i]-mean(dat[,i]))/sd(dat[,i])
+}
+```
+
+Our stand_dat dataframe now contains each column with a mean of 0 and standard deviation of 1. Lets check it...
+
+```{r}
+colMeans(stand_dat)
+apply(stand_dat, 2, sd)
+```
+
+The means of each column is pretty close to 0! And the sd is 1 as well which is what we want!
+
+## Apply
+
+Now you may have noticed that when calculating the sd of each function I used apply. Rather than writing a loop we could have just used this! Lets use it here to standardize the data...
+
+```{r}
+stand_data_apply <- apply(dat, 2, scale)
+head(stand_data_apply )
+```
+
+Let's check, does the data from apply look the same as the data from the loop? You can use apply to also run a function across rows.
+
+```{r}
+diff<-stand_data_apply - stand_dat
+head(diff)
+```
+
+It sure does! The values are identical, so we know both work
+
+## Scale
+Now a useful thing about scale is that you actually don't need to loop or apply because that functionality is built into it! We can scale columns using the function directly 
+
+
+```{r}
+scale_dat_scale <- scale(dat)
+head(scale_dat_scale)
+```
+
+Is it right???
+
+```{r}
+apply(scale_dat_scale, 2, mean)
+apply(scale_dat_scale, 2, sd)
+```
+
+There are a few things I did not execute flawlessly in this...you will notice I did not remove all variables. I also left year in the dataframe so it standardized that as well!! Which we don't want...I will leave it up to you to troubleshoot that :)
+
+One thing to note is that if we want to use your long table, the easiest way to create standardized data in that format is looping over your variable name column. Alternatively, you could use the methods here and then merge or join the datasets together after you create a table of the standardized values.
+
+Hope this helps! Happy standardizing!

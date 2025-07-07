@@ -284,12 +284,12 @@ dataframe %>%
 ```
 
 ```{r Scaled Graphs}
-my_function("Tcop",Scaled_combined_models,"Temp for copulation","temp C")
+my_function("Tcop",Scaled_combined_models,"Scaled Temporal Comparison of Temperature Cues for Co-Population (Tcop)\nin Northern Yellowtail: GLORYS vs MOM6","Temperature (°C)")
 
 
 ```
 ```{r UnScaled Graphs}
-my_function("Tcop",UnScaled_combined_models,"Temp for copulation","temp C")
+my_function("Tcop",UnScaled_combined_models,"Unscaled Temporal Comparison of Temperature Cues for Co-Population (Tcop)\nin Northern Yellowtail: GLORYS vs MOM6","Temperature (°C)")
 
 
 ```
@@ -312,17 +312,37 @@ combined_models %>%
 ```
 
 
+##Need help with making function to facetwrap variables
 
+```{r FacetWrap Plot Function}
 
+FacetWrap_function <- function(variable_name,dataframe, plot_title, y_axis) {
 
-
-```{r Facet Wrap plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
-
-combined_models %>%
+dataframe %>%
+  filter(variable == variable_name) %>%
   ggplot(aes(x = year, y = value, color = source)) +
   geom_point() + 
   geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 10 )) +
+    facet_wrap(~variable, scales = "free_y")+
+  scale_x_continuous(breaks = seq(min(dataframe$year), max(dataframe$year), by = 3 )) +
+  labs(title = plot_title,
+       y = y_axis,
+       x = ("Year"),
+       color = ("Ocean Model"))
+}
+  
+  
+  
+```
+
+
+```{r Facet Wrap Scaled plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
+
+Scaled_combined_models %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 10 )) +
   facet_wrap(~variable, scales = "free_y")+
 labs( color = ("Ocean Model"))
 
@@ -332,9 +352,9 @@ labs( color = ("Ocean Model"))
 
 
 
-```{r Facet Wrap CST plots, echo=FALSE, message=FALSE, warning=FALSE}
+```{r Scaled CST plots, echo=FALSE, message=FALSE, warning=FALSE}
 
-Scaled_combined_models %>%
+CST_ScaledPlots<- Scaled_combined_models %>%
   filter(variable %in% c("CSTlarv", "CSTpjuv")) %>%
   ggplot(aes(x = year, y = value, color = source)) +
   geom_point() + 
@@ -343,27 +363,50 @@ Scaled_combined_models %>%
   facet_wrap(~variable, scales = "free_y", ncol = 1, 
              labeller = labeller(variable = c("CSTlarv" = "Larval (CSTlarv)", "CSTpjuv" = "Pelagic Juvenile (CSTpjuv)"))) +
   labs(color = "Ocean Model") +
-  labs(title = "Comparison of Cross Shelf Transport (CST)\nfor Northern Yellowtail: GLORYS vs MOM6") +
+  labs(title = "Scaled Comparison of Cross Shelf Transport (CST)\nfor Northern Yellowtail: GLORYS vs MOM6") +
   theme_bw() +
   theme(strip.text = element_text(size = 12, face = "bold"),
         strip.background = element_rect(fill = "lightblue", color = "grey"),
         panel.spacing = unit(1, "lines"))
 
+print(CST_ScaledPlots)
 ```
 
 
-```{r Facet Wrap LST Variables, echo=FALSE, message=FALSE, warning=FALSE}
+```{r Unscaled CST plots, echo=FALSE, message=FALSE, warning=FALSE}
 
-combined_models %>%
+CST_UnScaledPlots <- UnScaled_combined_models %>%
+  filter(variable %in% c("CSTlarv", "CSTpjuv")) %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+    scale_x_continuous(breaks = seq(min(UnScaled_combined_models$year), max(UnScaled_combined_models$year), by = 4)) +
+  facet_wrap(~variable, scales = "free_y", ncol = 1, 
+             labeller = labeller(variable = c("CSTlarv" = "Larval (CSTlarv)", "CSTpjuv" = "Pelagic Juvenile (CSTpjuv)"))) +
+  labs(color = "Ocean Model") +
+  labs(title = "UnScaled Comparison of Cross Shelf Transport (CST)\nfor Northern Yellowtail: GLORYS vs MOM6") +
+  theme_bw() +
+  theme(strip.text = element_text(size = 12, face = "bold"),
+        strip.background = element_rect(fill = "lightblue", color = "grey"),
+        panel.spacing = unit(1, "lines"))
+
+print(CST_UnScaledPlots)
+
+```
+
+
+```{r Scaled LST Variables, echo=FALSE, message=FALSE, warning=FALSE}
+
+Scaled_combined_models %>%
   filter(variable %in% c("LSTlarv", "LSTpjuv")) %>%
   ggplot(aes(x = year, y = value, color = source)) +
   geom_point() + 
   geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 4)) +
+  scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 4)) +
   facet_wrap(~variable, scales = "free_y", ncol = 1, 
              labeller = labeller(variable = c("LSTlarv" = "Larval (LSTlarv)", "LSTpjuv" = "Pelagic Juvenile (CSTpjuv)"))) +
   labs(color = "Ocean Model") +
-  labs(title = "Comparison of Longshore Transport (LST)\nfor Northern Yellowtail: GLORYS vs MOM6") +
+  labs(title = "Scaled Comparison of Longshore Transport (LST)\nfor Northern Yellowtail: GLORYS vs MOM6") +
   theme_bw() +
   theme(strip.text = element_text(size = 12, face = "bold"),
         strip.background = element_rect(fill = "lightblue", color = "grey"),
@@ -371,13 +414,50 @@ combined_models %>%
 ```
 
 
-```{r Facet Wrap Temperature Variables}
-combined_models %>%
+```{r Unscaled LST Variables, echo=FALSE, message=FALSE, warning=FALSE}
+
+UnScaled_combined_models %>%
+  filter(variable %in% c("LSTlarv", "LSTpjuv")) %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 4)) +
+  facet_wrap(~variable, scales = "free_y", ncol = 1, 
+             labeller = labeller(variable = c("LSTlarv" = "Larval (LSTlarv)", "LSTpjuv" = "Pelagic Juvenile (CSTpjuv)"))) +
+  labs(color = "Ocean Model") +
+  labs(title = "UnScaled Comparison of Longshore Transport (LST)\nfor Northern Yellowtail: GLORYS vs MOM6") +
+  theme_bw() +
+  theme(strip.text = element_text(size = 12, face = "bold"),
+        strip.background = element_rect(fill = "lightblue", color = "grey"),
+        panel.spacing = unit(1, "lines"))
+```
+
+
+```{r  Scaled Temperature Variables}
+Scaled_combined_models %>%
   filter(variable %in% c("Tcop", "Tpart")) %>%
   ggplot(aes(x = year, y = value, color = source)) +
   geom_point() + 
   geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 4)) +
+  scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 4)) +
+  facet_wrap(~variable, scales = "free_y", ncol = 1, 
+             labeller = labeller(variable = c("Tcop" = "Copulation (Tcop)", "Tpart" = "Parturition (Tpart)"))) +
+  labs(color = "Ocean Model") +
+  labs(title = "Comparison of Temperature\nfor Northern Yellowtail: GLORYS vs MOM6") +
+  theme_bw() +
+  theme(strip.text = element_text(size = 12, face = "bold"),
+        strip.background = element_rect(fill = "lightblue", color = "grey"),
+        panel.spacing = unit(1, "lines"))
+```
+
+```{r UnScaled Temperature Variables}
+
+UnScaled_combined_models %>%
+  filter(variable %in% c("Tcop", "Tpart")) %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(UnScaled_combined_models$year), max(UnScaled_combined_models$year), by = 4)) +
   facet_wrap(~variable, scales = "free_y", ncol = 1, 
              labeller = labeller(variable = c("Tcop" = "Copulation (Tcop)", "Tpart" = "Parturition (Tpart)"))) +
   labs(color = "Ocean Model") +
@@ -389,18 +469,39 @@ combined_models %>%
 ```
 
 
-```{r Facet Wrap MLD variables}
 
-combined_models %>%
+
+```{r Scaled MLD plots}
+
+Scaled_combined_models %>%
   filter(variable %in% c("MLDlarv", "MLDpart", "MLDpjuv")) %>%
   ggplot(aes(x = year, y = value, color = source)) +
   geom_point() + 
   geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 4)) +
+  scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 4)) +
   facet_wrap(~variable, scales = "free_y", ncol = 1, 
              labeller = labeller(variable = c("MLDlarv" = "Larval (MLDlarv)", "MLDpart" = "Parturition (MLDpart)", "MLDpjuv" = "Pelagic Juvenile (MLDpjuv)"))) +
   labs(color = "Ocean Model") +
-  labs(title = "Comparison of Mixed Layer Depth (MLD)\nfor Northern Yellowtail: GLORYS vs MOM6") +
+  labs(title = "Scaled Comparison of Mixed Layer Depth (MLD)\nfor Northern Yellowtail: GLORYS vs MOM6") +
+  theme_bw() +
+  theme(strip.text = element_text(size = 12, face = "bold"),
+        strip.background = element_rect(fill = "lightblue", color = "grey"),
+        panel.spacing = unit(1, "lines"))
+```
+
+
+```{r Unscaled MLD variables}
+
+UnScaled_combined_models %>%
+  filter(variable %in% c("MLDlarv", "MLDpart", "MLDpjuv")) %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(UnScaled_combined_models$year), max(UnScaled_combined_models$year), by = 4)) +
+  facet_wrap(~variable, scales = "free_y", ncol = 1, 
+             labeller = labeller(variable = c("MLDlarv" = "Larval (MLDlarv)", "MLDpart" = "Parturition (MLDpart)", "MLDpjuv" = "Pelagic Juvenile (MLDpjuv)"))) +
+  labs(color = "Ocean Model") +
+  labs(title = "Unscaled Comparison of Mixed Layer Depth (MLD)\nfor Northern Yellowtail: GLORYS vs MOM6") +
   theme_bw() +
   theme(strip.text = element_text(size = 12, face = "bold"),
         strip.background = element_rect(fill = "lightblue", color = "grey"),

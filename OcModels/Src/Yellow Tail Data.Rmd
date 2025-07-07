@@ -20,8 +20,6 @@ library(patchwork)
 library(standardize)
 ```
 
-
-
 ```{r clear environment}
 rm(list = ls())
 ```
@@ -35,52 +33,55 @@ Full_Glory_Yellow_Tail.df <- read.csv(
   here("Data", "Yellowtail", "2024Env-annual-yellowtail_GLORYS_UNSTANDARDIZED.csv")
 )
 
-
-head(Full_Glory_Yellow_Tail.df)
+Full_Glory_Yellow_Tail.df <- na.omit(Full_Glory_Yellow_Tail.df) ###Take out NA's
 
 ```
 
 
-```{r Filter & take out NAs GLORY Variables}
+```{r Filter out Variables}
+Full_Glory_Yellow_Tail.df <- Full_Glory_Yellow_Tail.df %>%
+  select(year, Tcop, Tpart, MLDpart, MLDlarv, MLDpjuv, CSTlarv, CSTpjuv, LSTlarv, LSTpjuv)
 
-Filtered_Glory_Yellow_Tail.df <- Full_Glory_Yellow_Tail.df %>% select(year, Tcop, Tpart, MLDpart, MLDlarv, MLDpjuv, CSTlarv, CSTpjuv, LSTlarv, LSTpjuv)
+head(Full_Glory_Yellow_Tail.df)
+  
+```
 
-Filtered_Glory_Yellow_Tail.df <- na.omit(Filtered_Glory_Yellow_Tail.df) ###Take out NA's
 
+
+
+```{r Unscaled Data}
+
+UnScaled_Filtered_Glory_Yellow_Tail.df <- Full_Glory_Yellow_Tail.df %>%
+  mutate(scaled = FALSE)
+
+head(UnScaled_Filtered_Glory_Yellow_Tail.df)
 
 ```
 
 
 ```{r Scaling GLORY Data}
 
-Scaled_Filtered_Glory_Yellow_Tail.df <- Filtered_Glory_Yellow_Tail.df %>% mutate_at(c('Tcop', 'Tpart', 'MLDpart', 'MLDlarv', 'MLDpjuv', 'CSTlarv', 'CSTpjuv', 'LSTlarv', 'LSTpjuv'), ~(scale(.) %>% as.vector))
+Scaled_Filtered_Glory_Yellow_Tail.df <-  Full_Glory_Yellow_Tail.df %>%
+  mutate_at(c('Tcop', 'Tpart', 'MLDpart', 'MLDlarv', 'MLDpjuv', 'CSTlarv', 'CSTpjuv', 'LSTlarv', 'LSTpjuv'), ~(scale(.) %>% as.vector)) %>%
+  mutate(scaled = TRUE)
 
-print(Filtered_Glory_Yellow_Tail.df)
+head(Scaled_Filtered_Glory_Yellow_Tail.df)
 
 ```
 
 ```{r}
-###UnStandardized Table 
-####Mutate for standardized is False
-```
-
-
-
-
-
-```{r}
-apply(Filtered_Glory_Yellow_Tail.df, 2, mean)
+apply(Scaled_Filtered_Glory_Yellow_Tail.df, 2, mean)
 
 ```
 
 
 ```{r}
-apply(Filtered_Glory_Yellow_Tail.df, 2, sd)
+apply(Scaled_Filtered_Glory_Yellow_Tail.df, 2, sd)
 ```
 
 
-```{r Make GLORY data long}
-GYL_datalong <- Filtered_Glory_Yellow_Tail.df %>%
+```{r Make UnScaled GLORY data long}
+UnScaled_GYL_datalong <- UnScaled_Filtered_Glory_Yellow_Tail.df %>%
   pivot_longer(
     cols = c( Tcop, Tpart, MLDpart, MLDlarv, MLDpjuv, CSTlarv, CSTpjuv, LSTlarv, LSTpjuv),
     names_to = "variable",
@@ -88,7 +89,42 @@ GYL_datalong <- Filtered_Glory_Yellow_Tail.df %>%
   ) %>%
   mutate(source = "GLORYs")
 
-print(GYL_datalong)
+print(UnScaled_GYL_datalong)
+
+```
+
+```{r Make Scaled GLORY data long}
+
+Scaled_GYL_datalong <- Scaled_Filtered_Glory_Yellow_Tail.df %>%
+  pivot_longer(
+    cols = c( Tcop, Tpart, MLDpart, MLDlarv, MLDpjuv, CSTlarv, CSTpjuv, LSTlarv, LSTpjuv),
+    names_to = "variable",
+    values_to = "value"
+  ) %>%
+  mutate(source = "GLORYs")
+
+print(Scaled_GYL_datalong)
+
+```
+
+```{r}
+Glory_combined.df <- bind_rows(Scaled_GYL_datalong, UnScaled_GYL_datalong )
+
+head(Glory_combined.df)
+
+```
+```{r GLORYs Scaled vs. Unscaled}
+
+Glory_combined.df %>%
+  filter(variable == "Tcop") %>%
+  ggplot(aes(x = year, y = value, color = scaled)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(Glory_combined.df$year), max(Glory_combined.df$year), by = 3 )) +
+  labs(title = "Temporal Comparison of Scaled and Unscaled Temperature Cues for Copulation\n(Tcop) in Northern Yellowtail: GLORYS",
+       y = ("Temperature (°C)"),
+       x = ("Year"),
+       color = ("Scaled"))
 
 ```
 
@@ -100,12 +136,12 @@ Full_MOM6_Yellow_Tail.df <- read.csv(
   here("Data", "Yellowtail", "yellowtail_MOM6.csv"))
 
 
+
 head(Full_MOM6_Yellow_Tail.df)
 ```
 
 
 ```{r Filter MOM6 Variables }
-
 
 Filtered_MOM6_Yellow_Tail.df <- Full_MOM6_Yellow_Tail.df%>% select(year, Tcop, Tpart, MLDpart, MLDlarv, MLDpjuv,XVlarv, XVpjuv, YVlarv, YVpjuv)
 
@@ -123,53 +159,109 @@ Filtered_MOM6_Yellow_Tail.df <- Filtered_MOM6_Yellow_Tail.df %>%
     CSTpjuv = XVpjuv,
     LSTlarv = YVlarv,
     LSTpjuv = YVpjuv
-  )
+  ) %>%
+
+ filter(year >= 1998 & year <= 2021) ### Matches MOM6 years to the years GLORY dataset had
+
+Filtered_MOM6_Yellow_Tail.df <- na.omit(Filtered_MOM6_Yellow_Tail.df)
+
+
 
 print(Filtered_MOM6_Yellow_Tail.df)
-```
-
-```{r taking out NAs}
-Filtered_MOM6_Yellow_Tail.df <- na.omit(Filtered_MOM6_Yellow_Tail.df)
 ```
 
 
 ```{r Scaling MOM6 Data}
 
-Filtered_MOM6_Yellow_Tail.df <- Filtered_MOM6_Yellow_Tail.df %>% mutate_at(c('Tcop', 'Tpart', 'MLDpart', 'MLDlarv', 'MLDpjuv', 'CSTlarv', 'CSTpjuv', 'LSTlarv', 'LSTpjuv'), ~(scale(.) %>% as.vector))
+Scaled_MOM6_Yellow_Tail.df <- Filtered_MOM6_Yellow_Tail.df %>%
+  mutate_at(c('Tcop', 'Tpart', 'MLDpart', 'MLDlarv', 'MLDpjuv', 'CSTlarv', 'CSTpjuv', 'LSTlarv', 'LSTpjuv'), ~(scale(.) %>% as.vector)) %>%
+  mutate(scaled = TRUE)
 
-print(Filtered_MOM6_Yellow_Tail.df)
+
+head(Scaled_MOM6_Yellow_Tail.df)
+
 
 ```
 
 ```{r}
-apply(Filtered_MOM6_Yellow_Tail.df, 2, sd)
+apply(Scaled_MOM6_Yellow_Tail.df, 2, sd)
 ```
 
 ```{r}
-apply(Filtered_MOM6_Yellow_Tail.df, 2, mean)
+apply(Scaled_MOM6_Yellow_Tail.df, 2, mean)
 ```
 
-```{r Make MOM6 data long}
-MOM6YL_datalong <- Filtered_MOM6_Yellow_Tail.df %>%
+```{r Make Unscaled MOM6 data long}
+
+Unscaled_MOM6YL_datalong <- Filtered_MOM6_Yellow_Tail.df %>%
   pivot_longer(
     cols = c( Tcop, Tpart, MLDpart,MLDlarv, MLDpjuv, CSTlarv, CSTpjuv,LSTlarv, LSTpjuv, LSTlarv, LSTpjuv),
     names_to = "variable",
     values_to = "value"
   ) %>%
-  mutate(source = "MOM6")
+  mutate(source = "MOM6") %>%
+mutate(scaled = FALSE)
 
-print(MOM6YL_datalong)
+
+print(Unscaled_MOM6YL_datalong)
+```
+
+```{r Make Scaled MOM6 data long}
+
+Scaled_MOM6YL_datalong <- Scaled_MOM6_Yellow_Tail.df %>%
+  pivot_longer(
+    cols = c( Tcop, Tpart, MLDpart,MLDlarv, MLDpjuv, CSTlarv, CSTpjuv,LSTlarv, LSTpjuv, LSTlarv, LSTpjuv),
+    names_to = "variable",
+    values_to = "value"
+  ) %>%
+   mutate(source = "MOM6") %>%
+mutate(scaled = TRUE)
+
+print(Scaled_MOM6YL_datalong)
 ```
 
 
-```{r Combining Datasets}
+```{r Combining MOM6 Datasets}
 
-combined_models <- rbind(GYL_datalong, MOM6YL_datalong)
+MOM6_combined_models <- rbind(Scaled_MOM6YL_datalong,Unscaled_MOM6YL_datalong)
 
-head(combined_models)
+head(MOM6_combined_models)
 
 ```
 
+```{r MOM6 Scaled vs. Unscaled}
+
+MOM6_combined_models %>%
+  filter(variable == "Tcop") %>%
+  ggplot(aes(x = year, y = value, color = scaled)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(MOM6_combined_models$year), max(MOM6_combined_models$year), by = 3 )) +
+  labs(title = "Temporal Comparison of Scaled and Unscaled Temperature Cues for Copulation\n(Tcop) in Northern Yellowtail: MOM6",
+       y = ("Temperature (°C)"),
+       x = ("Year"),
+       color = ("Scaled"))
+
+```
+
+
+
+```{r Scaled Combining Datasets}
+
+Scaled_combined_models <- rbind(Scaled_GYL_datalong, Scaled_MOM6YL_datalong)
+
+head(Scaled_combined_models)
+
+```
+
+
+```{r UnScaled Combining Datasets}
+
+UnScaled_combined_models <- rbind(UnScaled_GYL_datalong, Unscaled_MOM6YL_datalong)
+
+head(UnScaled_combined_models)
+
+```
 
 ```{r Example Function}
 
@@ -191,12 +283,16 @@ dataframe %>%
   
 ```
 
-```{r}
-my_function("Tcop",combined_models,"Temp for copulation","temp C")
+```{r Scaled Graphs}
+my_function("Tcop",Scaled_combined_models,"Temp for copulation","temp C")
 
 
 ```
+```{r UnScaled Graphs}
+my_function("Tcop",UnScaled_combined_models,"Temp for copulation","temp C")
 
+
+```
 
 
 
@@ -214,6 +310,10 @@ combined_models %>%
        color = ("Ocean Model"))
 
 ```
+
+
+
+
 
 
 ```{r Facet Wrap plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
@@ -234,12 +334,12 @@ labs( color = ("Ocean Model"))
 
 ```{r Facet Wrap CST plots, echo=FALSE, message=FALSE, warning=FALSE}
 
-combined_models %>%
+Scaled_combined_models %>%
   filter(variable %in% c("CSTlarv", "CSTpjuv")) %>%
   ggplot(aes(x = year, y = value, color = source)) +
   geom_point() + 
   geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 4)) +
+  scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 4)) +
   facet_wrap(~variable, scales = "free_y", ncol = 1, 
              labeller = labeller(variable = c("CSTlarv" = "Larval (CSTlarv)", "CSTpjuv" = "Pelagic Juvenile (CSTpjuv)"))) +
   labs(color = "Ocean Model") +

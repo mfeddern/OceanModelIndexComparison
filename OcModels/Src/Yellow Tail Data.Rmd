@@ -283,12 +283,12 @@ dataframe %>%
   
 ```
 
-```{r Scaled Graphs}
+```{r Scaled Tcop Graphs}
 my_function("Tcop",Scaled_combined_models,"Scaled Temporal Comparison of Temperature Cues for Co-Population (Tcop)\nin Northern Yellowtail: GLORYS vs MOM6","Temperature (°C)")
 
 
 ```
-```{r UnScaled Graphs}
+```{r UnScaled Tcop Graphs}
 my_function("Tcop",UnScaled_combined_models,"Unscaled Temporal Comparison of Temperature Cues for Co-Population (Tcop)\nin Northern Yellowtail: GLORYS vs MOM6","Temperature (°C)")
 
 
@@ -296,44 +296,64 @@ my_function("Tcop",UnScaled_combined_models,"Unscaled Temporal Comparison of Tem
 
 
 
-```{r Tcop Plot, echo=FALSE, message=FALSE, warning=FALSE}
-
-combined_models %>%
-  filter(variable == "Tcop") %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 3 )) +
-  labs(title = "Temporal Comparison of Temperature Cues for Co-Population (Tcop)\nin Northern Yellowtail: GLORYS vs MOM6",
-       y = ("Temperature (°C)"),
-       x = ("Year"),
-       color = ("Ocean Model"))
-
-```
-
-
-##Need help with making function to facetwrap variables
-
 ```{r FacetWrap Plot Function}
 
-FacetWrap_function <- function(variable_name,dataframe, plot_title, y_axis) {
+### variable_name is a vector of strings that refer to column names in the dataframe
 
-dataframe %>%
-  filter(variable == variable_name) %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-    facet_wrap(~variable, scales = "free_y")+
-  scale_x_continuous(breaks = seq(min(dataframe$year), max(dataframe$year), by = 3 )) +
-  labs(title = plot_title,
-       y = y_axis,
-       x = ("Year"),
-       color = ("Ocean Model"))
+FacetWrap_function <- function(variable_name, dataframe, plot_title, y_axis) {
+  
+  dataframe %>%
+    filter(variable %in% variable_name) %>%
+    ggplot(aes(x = year, y = value, color = source)) +
+    geom_point() +
+    geom_line() +
+    geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
+    facet_wrap(~variable, scales = "free_y") +
+    scale_x_continuous(breaks = seq(min(dataframe$year), max(dataframe$year), by = 5)) +
+    labs(
+      title = plot_title,
+      y = y_axis,
+      x = "Year",
+      color = "Source"
+    ) +
+    theme_bw() +
+  theme(strip.text = element_text(size = 12, face = "bold"),
+        strip.background = element_rect(fill = "lightblue", color = "grey"),
+        panel.spacing = unit(1, "lines"))
 }
   
   
   
 ```
+
+
+```{r}
+
+FacetWrap_function(
+  variable_name = c("Tcop", "Tpart"),
+  dataframe = Scaled_GYL_datalong,
+  plot_title = "Temperature Trends (Long Format)",
+  y_axis = "Scaled Value"
+)
+
+
+
+```
+
+`
+
+
+```{r}
+
+FacetWrap_function(
+  variable = c("Tcop", "Tpart"),
+  dataframe = Scaled_combined_models,
+  plot_title = "Temperature Trends - GLORY",
+  y_axis = "Scaled Value"
+)
+
+```
+
 
 
 ```{r Facet Wrap Scaled plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
@@ -350,15 +370,28 @@ labs( color = ("Ocean Model"))
 ```
 
 
+```{r}
+
+FacetWrap_function(
+  variable = c("CSTlarv", "CSTpjuv"),
+  dataframe = Scaled_combined_models,
+  plot_title = "Cross Shelf Transport - GLORY",
+  y_axis = "Scaled Value"
+)
+
+```
+
 
 
 ```{r Scaled CST plots, echo=FALSE, message=FALSE, warning=FALSE}
+
 
 CST_ScaledPlots<- Scaled_combined_models %>%
   filter(variable %in% c("CSTlarv", "CSTpjuv")) %>%
   ggplot(aes(x = year, y = value, color = source)) +
   geom_point() + 
   geom_line() + 
+  geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
   scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 4)) +
   facet_wrap(~variable, scales = "free_y", ncol = 1, 
              labeller = labeller(variable = c("CSTlarv" = "Larval (CSTlarv)", "CSTpjuv" = "Pelagic Juvenile (CSTpjuv)"))) +

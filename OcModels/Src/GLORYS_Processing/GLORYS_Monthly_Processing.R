@@ -85,11 +85,11 @@ df2 <- tidync::tidync(paste0("Data/GLORYS_Processing/glorys-monthly-MLD-2022-01-
   drop_na() %>% 
   group_by(longitude,latitude,time) 
 
-dt = rbindlist( list(df2)) # faster; now a data.table
+dt = rbindlist( list(df1,df2)) # faster; now a data.table
 # clean up for space
-rm(df2)
-
-
+#rm(df2)
+dt$time
+write.csv(dt,"Data/GLORYS_Processing/MLD_combined.csv")
 mld_monthly <- data_prep(data.file=dt, bathy_file = dt_bathy)
 
 rm(dt)
@@ -119,7 +119,7 @@ rm(mld_month_out, mld_0_180, mld_0_90, mld_30_130)
 # MONTHLY CROSS SHELF TRANSPORT ################################################
 ################################################################################
 
-x<-"Data/GLORYS_Processing/glorys-monthly-crossshelf-eastward-1993-01-01-2021-06-30-1200m.nc"
+x<-"Data/GLORYS_Processing/glorys-monthly-crossshelf-eastward-2021-07-01-2025-03-01-1200m.nc"
 
 for(i in 1:length(x)){ 
   print(x[i])
@@ -165,7 +165,7 @@ cst_monthly = left_join(cst_monthly,CST_30_130)
 cst_monthly = left_join(cst_monthly,CST_180_549)
 
 
-cst_monthly_late <- cst_monthly
+# cst_monthly_late <- cst_monthly
 # clean up to save memory
 fwrite(cst_monthly, "Data/GLORYS_Processing/glorys-monthly-means-cst-2021.csv") 
 rm(cst_monthly)

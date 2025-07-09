@@ -17,7 +17,7 @@ data_prep <- function(data.file, bathy_file=NULL, shore_dist=NULL, mld=NULL, lat
   if(!is.null(lat_max)){print("subsetting by min depth") ; dx = dx[lat<=lat_max,,]}
   # time to date
   print("Adding date")
-  dx[,date:=lubridate::as_date(dx$time/24,origin="1950-01-01 00:00:00"),]
+  dx[,date:=as.Date(dx$time),]
   dx[,time:=NULL] # remove time
   # add bathy
   if(!is.null(bathy_file)){
@@ -76,20 +76,29 @@ rm(df)
 # for filtering monthly transport below
 
 df1 <- tidync::tidync("Data/GLORYS_Processing/glorys-monthly-MLD-1993-01-01-2021-06-30-1200m.nc") %>% 
-  hyper_tibble( force = TRUE) %>%
+  tidync::hyper_tibble( ) %>%
   drop_na() %>% 
+ # mutate_at(vars(longitude, latitude), as.numeric)%>%
+ # mutate(time=as.numeric(as.Date(time, format="%Y-%m-%d")))%>%
   group_by(longitude,latitude,time)
 
-df2 <- tidync::tidync(paste0("Data/GLORYS_Processing/glorys-monthly-MLD-2022-01-01-2025-01-01-1200m.nc")) %>% 
+df2 <- tidync::tidync(paste0("Data/GLORYS_Processing/glorys-monthly-MLD-2021-07-01-2025-03-01-1200m.nc")) %>% 
   hyper_tibble( force = TRUE) %>%
   drop_na() %>% 
+  #mutate_at(vars(longitude, latitude), as.numeric)%>%
+ # mutate(time=as.numeric(as.Date(time, format="%Y-%m-%d")))%>%
   group_by(longitude,latitude,time) 
 
 dt = rbindlist( list(df1,df2)) # faster; now a data.table
 # clean up for space
 #rm(df2)
+<<<<<<< Updated upstream
 dt$time
 write.csv(dt,"Data/GLORYS_Processing/MLD_combined.csv")
+=======
+
+
+>>>>>>> Stashed changes
 mld_monthly <- data_prep(data.file=dt, bathy_file = dt_bathy)
 
 rm(dt)

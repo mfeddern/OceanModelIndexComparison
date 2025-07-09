@@ -92,13 +92,10 @@ df2 <- tidync::tidync(paste0("Data/GLORYS_Processing/glorys-monthly-MLD-2021-07-
 dt = rbindlist( list(df1,df2)) # faster; now a data.table
 # clean up for space
 #rm(df2)
-<<<<<<< Updated upstream
+
 dt$time
 write.csv(dt,"Data/GLORYS_Processing/MLD_combined.csv")
-=======
 
-
->>>>>>> Stashed changes
 mld_monthly <- data_prep(data.file=dt, bathy_file = dt_bathy)
 
 rm(dt)
@@ -185,25 +182,18 @@ rm(cst_monthly)
 
 # need to go through this and sea surface height
 
-# glorys_daily_means = fread( paste0(data_dir, "glorys-daily-means-3.csv"))
-# glorys_daily_means$date = lubridate::as_date(glorys_daily_means$date)
-
-# get names of data files 
-x = dir(data_raw)
-y = grep("monthly-longshore" , x)
-x = x[y]
-x<-
+x<-"Data/GLORYS_Processing/glorys-monthly-longshore-northward-2021-07-01-2025-03-01-1200m.nc"
   
-  for(i in 1:length(x)){ 
-    print(x[i])
-    (t1 = Sys.time())
-    dfx <- tidync::tidync(paste0(data_raw,x[i])) %>% 
-      hyper_tibble( force = TRUE) %>%
-      drop_na() %>% 
-      group_by(longitude,latitude,time)
-    
-    dt_lst = data_prep(data.file=dfx, bathy_file = dt_bathy)
-    rm(dfx) # clean up memory for space
+for(i in 1:length(x)){ 
+  print(x[i])
+  (t1 = Sys.time())
+  dfx <- tidync::tidync(paste0(x[i])) %>% 
+    hyper_tibble( force = TRUE) %>%
+    drop_na() %>% 
+    group_by(longitude,latitude,time)
+  
+  dt_lst = data_prep(data.file=dfx, bathy_file = dt_bathy)
+  rm(dfx)# clean up memory for space
     # as in temporary not temperature
     
     # calculations for depth x lat zones = mean daily value
@@ -240,5 +230,5 @@ lst_monthly = left_join(lst_monthly,LST_30_130)
 lst_monthly = left_join(lst_monthly,LST_180_549)
 
 # clean up to save memory
-fwrite(lst_monthly, paste0(data_dir, "glorys-monthly-means-lst.csv")) 
+fwrite(lst_monthly, "Data/GLORYS_Processing/glorys-monthly-means-lst-2025.csv") 
 rm(lst_monthly)

@@ -14,6 +14,7 @@ library(corrplot)
 library(mgcv)
 library(dplyr)
 library(tidync)
+library(gratia)
 
 ```
 ## Generating data
@@ -84,6 +85,10 @@ data.frame(covariate=c("covariate 1", "covarate 2"),
            covariance = c(cov1, cov2), correlation = c(cor1, cor2))
 ```
 
+These look to correlate and covary with eachother okay but not exceptionally well given they should be showing the same thing! 
+
+**Note** *for your standardized and unstandardized time series analysis you will want to include these two stats. You could make a table OR you could add these values to your figure either using annotate_figure or by putting them in the title* 
+
 Now lets simulate the recruitment data, lets pretend recruitment has a linear relationship with covariate 2 and a dome shaped relationship with covariate 2. Let pretend model 1 is a better predictor of Y rec
 
 ```{r}
@@ -137,29 +142,76 @@ GAM stand for a generalized additive model. It is useful and used frequently in 
 
 Lets fit separate GAMs for each model and covariate. I am going to just copy and paste the code here, rather than write it in a function so it is easier to follow. There are three metrics of this output we are interested in: 1) the r-squared, 2) the deviance explained, and 3) the significance or p-value of the smoothed term. Based on how we simulated the data above, Model 1 should better explain the data than Model 2 so we should see that reflected in our results!
 
-```{r}
+```{r, echo=FALSE}
+data_full_long <- pivot_longer(data_full, -c(Y_rec, Model, year), names_to = "covariatename", values_to = "Value")
 
-gamM1C1<- summary(gam(Y_rec~s(covariate1,k=3), data=data_full%>%filter(Model=="Model 1"), method = "REML"))
+gamoutput<-function(modelname, covariate){
+gamfit<- gam(Y_rec~s(Value,k=3), data=data_full_long%>%filter(Model == modelname, covariatename==covariate), method = "REML")
+
+summary <- summary(gamfit)
+predictions <- data.frame(prediction=predict(gamfit, se.fit=TRUE),year=unique(data_full$year))%>%
+  mutate(covariate=covariate, Model = modelname)
 
 #pulling out the values we need and adding to a dataframe
-gamresults <- data.frame(covariate="covariate 1", Model = "Model 1", pvalue = gamM1C1$s.table[, "p-value"], DevianceExp = gamM1C1$dev.expl, rsq = gamM1C1$dev.expl)
+results <- data.frame(covariate=covariate, Model = modelname, pvalue = summary$s.table[, "p-value"], DevianceExp = summary$dev.expl, rsq = summary$dev.expl)
 
-gamM2C1<- summary(gam(Y_rec~s(covariate1,k=3), data=data_full%>%filter(Model=="Model 2"), method = "REML"))
+smooth_data <- smooth_estimates(gamfit)%>%  # Or specify the smooth term you want to plot
+  add_constant(model_constant(gamfit)) %>% # Add the intercept
+  add_confint()%>% # Add the credible interval
+ # pivot_longer(c(covariate),names_to = "Smooth",values_to ="Value")%>%
+  select(-c(.by))%>%
+  mutate(covariate=covariate, Model = modelname)
 
-gamM1C2 <-summary(gam(Y_rec~s(covariate2,k=3), data=data_full%>%filter(Model=="Model 1"), method = "REML"))
 
-gamM2C2 <-summary(gam(Y_rec~s(covariate2,k=3), data=data_full%>%filter(Model=="Model 2"), method = "REML"))
 
-gamresults <- gamresults%>%
-  rbind(c("covariate 1", "Model 2", gamM2C1$s.table[, "p-value"], gamM2C1$dev.expl, gamM2C1$dev.expl))%>%
-  rbind(c("covariate 2", "Model 1", gamM1C2$s.table[, "p-value"], gamM1C2$dev.expl, gamM1C2$dev.expl))%>%
-    rbind(c("covariate 2", "Model 2", gamM2C2$s.table[, "p-value"], gamM2C2$dev.expl, gamM2C2$dev.expl))%>%
-  mutate(across(c(pvalue, DevianceExp, rsq), as.numeric))%>%
-  mutate(across(c(pvalue, DevianceExp,rsq), round, 2))
+output<-list(summary, predictions, results,smooth_data)
+return(output)
+  }
+gamM1C1<-gamoutput("Model 1", "covariate1")
+gamM2C1<-gamoutput("Model 2", "covariate1")
+gamM1C2<-gamoutput("Model 1", "covariate2")
+gamM2C2<-gamoutput("Model 2", "covariate2")
 
-gamresults
+predictions_gam<- data.frame(gamM1C1[[2]])%>%
+  bind_rows(data.frame(gamM2C1[[2]]))%>%
+  bind_rows(data.frame(gamM1C2[[2]]))%>%
+  bind_rows(data.frame(gamM2C2[[2]]))
+
+results_gam<- data.frame(gamM1C1[[3]])%>%
+  bind_rows(data.frame(gamM2C1[[3]]))%>%
+  bind_rows(data.frame(gamM1C2[[3]]))%>%
+  bind_rows(data.frame(gamM2C2[[3]]))
+
+smooths_gam<- data.frame(gamM1C1[[4]])%>%
+  bind_rows(data.frame(gamM2C1[[4]]))%>%
+  bind_rows(data.frame(gamM1C2[[4]]))%>%
+  bind_rows(data.frame(gamM2C2[[4]]))
+
+```
+
+```{r, echo=FALSE}
+
+results_gam
+
 ```
 
 Based on these results, we find that Model 1 has a significant smooth for both covariates, it fits the data better than Model 2 (r-squared) AND it explains more deviance. Overall, Model 1 is a better predictor of recruitment than Model 2, despite the fact that both models covary and correlate quite well through time.
 
-The last thing we want to do to compare these relationships is to look at the functional relationships for each model. This is quite similar to what we did above, BUT we want to do it for the actual model we fit rather than just using what is in ggplot automatically. This is a little annoying to do for gams...
+The last thing we want to do to compare these relationships is to look at the functional relationships for each model. This is quite similar to what we did above, BUT we want to do it for the actual model we fit rather than just using what is in ggplot automatically. This is a little annoying to do for gams, but the function above will give you the output you need!
+
+```{r, echo=FALSE}
+smooth_full<- smooths_gam%>%left_join(data_full_long)
+
+partial_effects<-ggplot(smooths_gam) +  # Setup the plot with the fitted values
+  facet_grid(~covariate)+
+  geom_line(aes(x = Value, y = .estimate, col=Model), lwd=1.25) + # Add estimated smooth
+    geom_point(data = data_full_long%>%filter(Model=="Model 1")%>%rename(covariate=covariatename), aes(x = Value, y = Y_rec), color = "black") + # Add your data points
+  theme_bw()
+partial_effects 
+
+
+
+
+```
+
+**Conclusion**: The conclusion that can be drawn from this example is that the difference between Model 1 and Model 2 are substantial enough to impact how we estimate a index of recruitment, including the functional relationship between and oceanographic condition and recrutiment. 

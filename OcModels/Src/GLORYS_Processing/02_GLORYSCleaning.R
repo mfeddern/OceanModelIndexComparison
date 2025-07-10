@@ -20,6 +20,10 @@ cst<-read.csv("Data/GLORYS_Processing/glorys-monthly-means-cst-2021.csv")%>%
 mld<-read.csv("Data/GLORYS_Processing/glorys-monthly-means-mld2025.csv")%>%
   mutate(variable = "MLD")%>%
   pivot_longer(-c(date, variable))
+temp<-read.csv("Data/GLORYS_Processing/glorys-monthly-means-temp-2021.csv")%>%
+  bind_rows(read.csv("Data/GLORYS_Processing/glorys-monthly-means-temp-2025.csv"))%>%
+  mutate(variable = "Temp")%>%
+  pivot_longer(-c(date, variable))
 
 full_data <- lst%>%
   bind_rows(cst)%>%

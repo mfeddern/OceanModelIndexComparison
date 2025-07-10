@@ -68,9 +68,7 @@ rm(df)
 #fwrite(d_shore, paste0(data_dir,'distance-to-shore.csv'))
 
 
-################################################################################
 # MONTHY MIXED-LAYER-DEPTH #####################################################
-################################################################################
 
 # dir(data_raw)
 # for filtering monthly transport below
@@ -121,9 +119,8 @@ fwrite(mld_month_out, "Data/GLORYS_Processing/glorys-monthly-means-mld2025.csv")
 rm(mld_month_out, mld_0_180, mld_0_90, mld_30_130)
 
 # continue here ####
-################################################################################
+
 # MONTHLY CROSS SHELF TRANSPORT ################################################
-################################################################################
 
 x<-"Data/GLORYS_Processing/glorys-monthly-crossshelf-eastward-2021-07-01-2025-03-01-1200m.nc"
 
@@ -176,9 +173,7 @@ cst_monthly = left_join(cst_monthly,CST_180_549)
 fwrite(cst_monthly, "Data/GLORYS_Processing/glorys-monthly-means-cst-2021.csv") 
 rm(cst_monthly)
 
-################################################################################
 # MONTHLY LONGSHORE TRANSPORT ##################################################
-################################################################################
 
 # need to go through this and sea surface height
 
@@ -232,3 +227,59 @@ lst_monthly = left_join(lst_monthly,LST_180_549)
 # clean up to save memory
 fwrite(lst_monthly, "Data/GLORYS_Processing/glorys-monthly-means-lst-2025.csv") 
 rm(lst_monthly)
+
+
+# MONTHLY TEMP ##################################################
+
+# need to go through this and sea surface height
+
+x<-"Data/GLORYS_Processing/glorys-monthly-thetao-1993-01-01-2021-06-30-1200m.nc"
+
+for(i in 1:length(x)){ 
+  print(x[i])
+  (t1 = Sys.time())
+  dfx <- tidync::tidync(paste0(x[i])) %>% 
+    hyper_tibble( force = TRUE) %>%
+    drop_na() %>% 
+    group_by(longitude,latitude,time)
+  
+  dt_temp = data_prep(data.file=dfx, bathy_file = dt_bathy)
+  rm(dfx)# clean up memory for space
+  # as in temporary not temperature
+  
+  # calculations for depth x lat zones = mean daily value
+  # subset and average by date later
+  
+  temp_90_180 = dt_temp[bottom_depth >= 90 & bottom_depth <=180 , .(temp_90_180 = mean(thetao)), by='date']
+  temp_0_180 = dt_temp[bottom_depth >= 0 & bottom_depth <=180 , .(temp_0_180 = mean(thetao)), by='date']
+  temp_0_90 = dt_temp[bottom_depth >= 0 & bottom_depth <=90 , .(temp_0_90 = mean(thetao)), by='date']
+  temp_30_130 = dt_temp[bottom_depth >= 30 & bottom_depth <=130 , .(temp_30_130 = mean(thetao)), by='date']
+  temp_180_549 = dt_temp[bottom_depth >= 180 & bottom_depth <=549 , .(temp_180_549 = mean(thetao)), by='date']
+  
+  rm(dt_temp)
+  
+  if(i==1){
+    temp_90_180 = temp_90_180
+    temp_0_180 = temp_0_180
+    temp_0_90 = temp_0_90
+    temp_30_130 = temp_30_130
+    temp_180_549 = temp_180_549
+  }else{
+    temp_90_180 = rbindlist( list(temp_90_180,temp_90_180))
+    temp_0_180 = rbindlist( list(temp_0_180,temp_0_180))
+    temp_0_90 = rbindlist( list(temp_0_90,temp_0_90))
+    temp_30_130 = rbindlist( list(temp_30_130,temp_30_130))
+    temp_180_549 = rbindlist( list(temp_180_549,temp_180_549))
+  } # end if
+} # end i loop
+
+
+
+temp_monthly = left_join(temp_90_180,temp_0_180)
+temp_monthly = left_join(temp_monthly,temp_0_90)
+temp_monthly = left_join(temp_monthly,temp_30_130)
+temp_monthly = left_join(temp_monthly,temp_180_549)
+
+# clean up to save memory
+fwrite(temp_monthly, "Data/GLORYS_Processing/glorys-monthly-means-temp-2025.csv") 
+rm(temp_monthly)

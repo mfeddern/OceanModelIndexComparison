@@ -1,0 +1,26 @@
+---
+title: "Running Linear and Generalized Additive Models"
+format: pdf
+editor: visual
+---
+
+## LMs
+
+There are two ways we
+
+## GAMs
+
+GAM stand for a generalized additive model. It is useful and used frequently in ecology because it allows for more flexible "functional relationships" aka the relationship between your driver and predictor, than linear models. For linear models you need to use quadratic or cubic terms to fit relationships that do not follow a line, and as a result they are "rigid".
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).

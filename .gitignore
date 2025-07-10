@@ -1,5 +1,5 @@
 # Mac system files
-.DS_store
+*.DS_store
 
 # Net CDF files
 *.nc
@@ -53,6 +53,9 @@ docs/
 
 # translation temp files
 po/*~
+
+# interim MOM6 data
+OcModels/Data/MOM6/interim/*
 
 # RStudio Connect folder
 rsconnect/

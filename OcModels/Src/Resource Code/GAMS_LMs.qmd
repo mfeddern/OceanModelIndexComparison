@@ -32,7 +32,7 @@ modelnames<- rep(c("Model 1", "Model 2"), each=30) # a variable for models,
 
 cov1mod1<- arima.sim(list(order = c(1,0,0), ar = 0.7), n = 30)%>% #random time series
   scale() # standardize it!
-cov1mod2 <- cov1mod1+rnorm(n= 30, mean = .5, sd=0.3)%>%
+cov1mod2 <- cov1mod1+rnorm(n= 30, mean = 1, sd=0.3)%>%
   scale()#second time series that 
 #covaries with the first
 
@@ -48,6 +48,8 @@ dataset <- data.frame(year=year,covariate1=c(cov1mod1,cov1mod2),covariate2=c(cov
 
 ```
 
+
+
 ```{r, echo=FALSE}
 
 #quick check just to see if these look roughly like your ocean data
@@ -60,7 +62,29 @@ ggplot(data=dataset, aes(x=year, y=covariate2, group=Model, col=Model))+
   theme_bw()
 ```
 
-Now lets simulate the recruitment data, lets pretend recruitment has a linear relationship with covariate 2 and a linear relationship with covariate 1. Let pretend model 1 is a better predictor of Y rec
+The two oceanographic models seem to track each other fairly well, BUT we want to be able to say how well they track eachother through time. We can do this a few ways, covariance and Pearson's correlations are a good place to start!
+
+```{r}
+#this tells us the covariance
+cov1<- cov(dataset%>%filter(Model=="Model 1")%>%select(covariate1),
+    dataset%>%filter(Model=="Model 2")%>%select(covariate1))
+
+cov2<-cov(dataset%>%filter(Model=="Model 1")%>%select(covariate2),
+    dataset%>%filter(Model=="Model 2")%>%select(covariate2))
+
+#this tells us the correlation coefficient
+cor1<- cor(dataset%>%filter(Model=="Model 1")%>%select(covariate1),
+    dataset%>%filter(Model=="Model 2")%>%select(covariate1))
+
+cor2 <-cor(dataset%>%filter(Model=="Model 1")%>%select(covariate2),
+    dataset%>%filter(Model=="Model 2")%>%select(covariate2))
+
+#lets store these in a dataframe so we have them 
+data.frame(covariate=c("covariate 1", "covarate 2"), 
+           covariance = c(cov1, cov2), correlation = c(cor1, cor2))
+```
+
+Now lets simulate the recruitment data, lets pretend recruitment has a linear relationship with covariate 2 and a dome shaped relationship with covariate 2. Let pretend model 1 is a better predictor of Y rec
 
 ```{r}
 linear1 <- 4
@@ -76,7 +100,9 @@ data_full<-dataset%>%
   mutate(Y_rec=rep(Y_rec, 2))
 ```
 
-Lets look at the relationship between covariate 1 and recruitment. 
+### Visually examining the relationships
+
+The first way we can think about an oceanographic condition as a predictor/driver of recruitment is by looking at it visually. Lets look at the relationships between covariates/predictors and recruitment. 
 ```{r}
 ggplot(data=data_full, aes(x=covariate1, y=Y_rec, group=Model, col=Model))+
   geom_point()+
@@ -101,23 +127,39 @@ ggplot(data=data_full, aes(x=covariate2, y=Y_rec, group=Model, col=Model))+
   geom_smooth(method = "gam", formula = y ~ s(x, k = 3))+
   theme_bw()
 ```
-Much better! But it appears model 1 and 2 explain the data very differently and have very different relationships. For these plots we were just using the GAM and LM function built into ggplot. That is a great first pass that would be useful with the data you are using! BUT we also want actual information about the fits and the parameters that we can only get from actually fitting the model...so lets try fitting a some linear and generalized additive models first.
-
-
+Much better! But it appears model 1 and 2 explain the data very differently and have very different functional relationships. For these plots we were just using the GAM and LM function built into ggplot. That is a great first pass that would be useful with the data you are using! BUT we also want actual information about the fits and the parameters that we can only get from actually fitting the model...so lets try fitting a some linear and generalized additive models first.
 
 ## GAMs
 
-GAM stand for a generalized additive model. It is useful and used frequently in ecology because it allows for more flexible "functional relationships" aka the relationship between your driver and predictor, than linear models. For linear models you need to use quadratic or cubic terms to fit relationships that do not follow a line, and as a result they are "rigid".
+Lets start with GAMs these are what were used for the Yellowtail stock assessment so this is a more useful place to start. 
+
+GAM stand for a generalized additive model. It is useful and used frequently in ecology because it allows for more flexible "functional relationships" aka the relationship between your driver and predictor, than linear models. For linear models you need to use quadratic or cubic terms to fit relationships that do not follow a line, and as a result they are "rigid". Rather than fitting a linear relationship, GAMs fit a "smoothed" relationship which is a fancy way of saying they use a function or equation to fit that relationship.
+
+Lets fit separate GAMs for each model and covariate. I am going to just copy and paste the code here, rather than write it in a function so it is easier to follow. There are three metrics of this output we are interested in: 1) the r-squared, 2) the deviance explained, and 3) the significance or p-value of the smoothed term. Based on how we simulated the data above, Model 1 should better explain the data than Model 2 so we should see that reflected in our results!
 
 ```{r}
-1 + 1
+
+gamM1C1<- summary(gam(Y_rec~s(covariate1,k=3), data=data_full%>%filter(Model=="Model 1"), method = "REML"))
+
+#pulling out the values we need and adding to a dataframe
+gamresults <- data.frame(covariate="covariate 1", Model = "Model 1", pvalue = gamM1C1$s.table[, "p-value"], DevianceExp = gamM1C1$dev.expl, rsq = gamM1C1$dev.expl)
+
+gamM2C1<- summary(gam(Y_rec~s(covariate1,k=3), data=data_full%>%filter(Model=="Model 2"), method = "REML"))
+
+gamM1C2 <-summary(gam(Y_rec~s(covariate2,k=3), data=data_full%>%filter(Model=="Model 1"), method = "REML"))
+
+gamM2C2 <-summary(gam(Y_rec~s(covariate2,k=3), data=data_full%>%filter(Model=="Model 2"), method = "REML"))
+
+gamresults <- gamresults%>%
+  rbind(c("covariate 1", "Model 2", gamM2C1$s.table[, "p-value"], gamM2C1$dev.expl, gamM2C1$dev.expl))%>%
+  rbind(c("covariate 2", "Model 1", gamM1C2$s.table[, "p-value"], gamM1C2$dev.expl, gamM1C2$dev.expl))%>%
+    rbind(c("covariate 2", "Model 2", gamM2C2$s.table[, "p-value"], gamM2C2$dev.expl, gamM2C2$dev.expl))%>%
+  mutate(across(c(pvalue, DevianceExp, rsq), as.numeric))%>%
+  mutate(across(c(pvalue, DevianceExp,rsq), round, 2))
+
+gamresults
 ```
 
-You can add options to executable code like this
+Based on these results, we find that Model 1 has a significant smooth for both covariates, it fits the data better than Model 2 (r-squared) AND it explains more deviance. Overall, Model 1 is a better predictor of recruitment than Model 2, despite the fact that both models covary and correlate quite well through time.
 
-```{r}
-#| echo: false
-2 * 2
-```
-
-The `echo: false` option disables the printing of code (only output is displayed).
+The last thing we want to do to compare these relationships is to look at the functional relationships for each model. This is quite similar to what we did above, BUT we want to do it for the actual model we fit rather than just using what is in ggplot automatically. This is a little annoying to do for gams...

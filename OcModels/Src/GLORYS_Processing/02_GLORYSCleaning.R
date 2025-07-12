@@ -28,6 +28,7 @@ temp<-read.csv("Data/GLORYS_Processing/glorys-monthly-means-temp-2021.csv")%>%
 full_data <- lst%>%
   bind_rows(cst)%>%
   bind_rows(mld)%>%
+  bind_rows(temp)%>%
   mutate(year=year(date), month = month(date))%>%
   select(-date)%>%
   mutate(Model = "GLORYS")

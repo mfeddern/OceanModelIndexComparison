@@ -233,7 +233,7 @@ rm(lst_monthly)
 
 # need to go through this and sea surface height
 
-x<-"Data/GLORYS_Processing/glorys-monthly-thetao-1993-01-01-2021-06-30-1200m.nc"
+x<-"Data/GLORYS_Processing/glorys-monthly-thetao-2021-07-01-2025-03-01-1200m.nc"
 
 for(i in 1:length(x)){ 
   print(x[i])
@@ -281,5 +281,5 @@ temp_monthly = left_join(temp_monthly,temp_30_130)
 temp_monthly = left_join(temp_monthly,temp_180_549)
 
 # clean up to save memory
-fwrite(temp_monthly, "Data/GLORYS_Processing/glorys-monthly-means-temp-2025.csv") 
+fwrite(temp_monthly, "Data/GLORYS_Processing/glorys-monthly-means-temp-2021.csv") 
 rm(temp_monthly)

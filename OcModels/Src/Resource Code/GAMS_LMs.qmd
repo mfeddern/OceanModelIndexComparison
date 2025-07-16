@@ -142,7 +142,7 @@ GAM stand for a generalized additive model. It is useful and used frequently in 
 
 Lets fit separate GAMs for each model and covariate. I am going to just copy and paste the code here, rather than write it in a function so it is easier to follow. There are three metrics of this output we are interested in: 1) the r-squared, 2) the deviance explained, and 3) the significance or p-value of the smoothed term. Based on how we simulated the data above, Model 1 should better explain the data than Model 2 so we should see that reflected in our results!
 
-```{r, echo=FALSE}
+```{r}
 data_full_long <- pivot_longer(data_full, -c(Y_rec, Model, year), names_to = "covariatename", values_to = "Value")
 
 gamoutput<-function(modelname, covariate){
@@ -215,3 +215,152 @@ partial_effects
 ```
 
 **Conclusion**: The conclusion that can be drawn from this example is that the difference between Model 1 and Model 2 are substantial enough to impact how we estimate a index of recruitment, including the functional relationship between and oceanographic condition and recrutiment. 
+
+
+## Diandre' START HERE :)
+
+I wrote a function for you to fit the GAMs so you basically just need to call the function with the covariate and model name. You can add the recruitment deviation data to your "long" data table, and then use this function to fit the gam called 'gamoutput'. The output will be returned to you as a list with 4 components:
+1) the first part is the GAM summary
+2) the second part are the model predictions of the gam
+3) the results of the gam which includes the important values of the summary, the r-squared value, the deviance explained, and the p-value of the smoother (aka is the covariate significant)
+4) the smoothed terms that you can use to plot the relationships
+
+Here is the chunk with the function you can copy into your code!
+
+```{r}
+data_full_long <- pivot_longer(data_full, -c(Y_rec, Model, year), names_to = "covariatename", values_to = "Value") #modify this for your long dataset with the re devs
+
+#the function starts here
+gamoutput<-function(modelname, covariate, data){
+  
+#this is the equation of the gam that filters the for a model (GLORYs or MOM6)
+# and filters for a covariate (MLDpjuv, Tcop etc. etc.)
+gamfit<- gam(Y_rec~s(Value,k=3), data=data%>%filter(Model == modelname, covariatename==covariate), method = "REML") 
+
+
+summary <- summary(gamfit) #this pulls out the summary of the model
+
+#this pulls out the model preditions and the SEs of the predictions and stores
+#them into a dataframe
+predictions <- data.frame(prediction=predict(gamfit, se.fit=TRUE),year=unique(data_full$year))%>%
+  mutate(covariate=covariate, Model = modelname) 
+
+#pulling out the values we need from the summary and adding to a dataframe
+#that we can easily make a table out of
+results <- data.frame(covariate=covariate, Model = modelname, pvalue = summary$s.table[, "p-value"], DevianceExp = summary$dev.expl, rsq = summary$dev.expl)
+
+#pulling out the shape of the relationship so that we can plot it!
+smooth_data <- smooth_estimates(gamfit)%>%  # Or specify the smooth term you want to plot
+  add_constant(model_constant(gamfit)) %>% # Add the intercept
+  add_confint()%>% # Add the credible interval
+ # pivot_longer(c(covariate),names_to = "Smooth",values_to ="Value")%>%
+  select(-c(.by))%>%
+  mutate(covariate=covariate, Model = modelname)
+
+#putting it together as a list so we can get a single output with all the great 
+#info that we need!
+
+output<-list(summary, predictions, results,smooth_data)
+return(output)
+}
+```
+
+Okay, so starting here is where you want to modify the code. I did not take the time to write this super efficiently here...lots of copy and pasteing. I will show you how to do it better in the next chunk!
+
+To start, I call the gamoutput function written above with each model name, GLORYs or MOM6 and each oceanographic condition name. 
+
+```{r}
+
+#this runs the function for both ROMS and GLORYs for each covariate, you will
+#want to change the values to match your data. Output list will be stored
+# as a variable. 
+
+gamM1C1<-gamoutput("Model 1", "covariate1", data_full_long)
+gamM2C1<-gamoutput("Model 2", "covariate1", data_full_long)
+gamM1C2<-gamoutput("Model 1", "covariate2", data_full_long)
+gamM2C2<-gamoutput("Model 2", "covariate2", data_full_long)
+
+
+unique(data_full_long$Model)
+#now we can pull out each output we want from the list and combine it with the 
+# other runs of the function into a single dataframe
+
+predictions_gam<- data.frame(gamM1C1[[2]])%>%
+  bind_rows(data.frame(gamM2C1[[2]]))%>%
+  bind_rows(data.frame(gamM1C2[[2]]))%>%
+  bind_rows(data.frame(gamM2C2[[2]]))
+
+results_gam<- data.frame(gamM1C1[[3]])%>%
+  bind_rows(data.frame(gamM2C1[[3]]))%>%
+  bind_rows(data.frame(gamM1C2[[3]]))%>%
+  bind_rows(data.frame(gamM2C2[[3]]))
+
+smooths_gam<- data.frame(gamM1C1[[4]])%>%
+  bind_rows(data.frame(gamM2C1[[4]]))%>%
+  bind_rows(data.frame(gamM1C2[[4]]))%>%
+  bind_rows(data.frame(gamM2C2[[4]]))
+
+```
+
+Now we have all the output we want stored in dataframes. The next thing to do is to make plots from that output. From the code above you will have a "smooth_full" obect which you can now use to make your plots once you join it with you dataset. For you, this plot will have 9 panels like your time series plots!
+
+```{r, echo=FALSE}
+#change the code here to have your dataset long name, and you will create a 
+#multi panel plot showing the relationships of both models on the plot! We can
+#also add the deviance explained to the plot as well :)
+
+smooth_full<- smooths_gam%>%left_join(data_full_long)%>%left_join(results_gam)
+
+partial_effects<-ggplot(smooths_gam) +  # Setup the plot with the fitted values
+  facet_grid(~covariate)+
+  geom_line(aes(x = Value, y = .estimate, col=Model), lwd=1.25) + # Add estimated smooth
+    geom_point(data = data_full_long%>%rename(covariate=covariatename), aes(x = Value, y = Y_rec, col=Model),alpha = 0.2) + # Add your data points
+# Diandre', I couldnt figure out how to do this in one call sot there are
+# multiple geom text calls, which means you will 
+# have to change the model filter!! and potentially the x and y values
+  geom_text(
+  data    = results_gam%>%filter(Model=="Model 1"),
+  mapping = aes(x = -2, y = 5, label = round(DevianceExp,2), group=covariate),
+  hjust   = -0.1,
+  vjust   = -1, col='#F8766D'
+)+
+    geom_text(
+  data    = results_gam%>%filter(Model=="Model 2"),
+  mapping = aes(x = -2, y = 3, label = round(DevianceExp,2), group=covariate),
+  hjust   = -0.1,
+  vjust   = -1, col='#00BFC4'
+)+
+annotate("text", x= -1, y = 8,label="Dev Explained")+
+  guides(text="none")+
+  theme_bw()
+partial_effects 
+
+
+```
+
+Here is another option using a loop rather than copy and pasting! It will loop over each model, then each covariate for each model
+
+```{r}
+
+#here is a more efficient way to run the function through a loop to 
+# generate the same output from the copy paste above!
+#this creates the same objects that you can run through the plot code
+
+
+Modelnames <- unique(data_full_long$Model) #change this to your dataset
+covariatenames <- unique(data_full_long$covariatename) #change this to your dataset
+predictions_gam2<- data.frame()
+results_gam2<- data.frame()
+smooths_gam2<- data.frame()
+
+for(i in 1:length(covariatenames)){
+  for(j in 1:length(Modelnames)){
+    gamout<-gamoutput(Modelnames[j], covariatenames[j], data_full_long)
+    predictions_gam2<-rbind(predictions_gam2, gamout[[2]])
+    results_gam2<-rbind(results_gam2, gamout[[3]])
+    smooths_gam2<-rbind(smooths_gam2, gamout[[4]])
+  }
+  print(i)
+}
+
+```

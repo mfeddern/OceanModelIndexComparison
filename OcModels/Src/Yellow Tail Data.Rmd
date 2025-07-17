@@ -299,8 +299,8 @@ my_function("Tcop",UnScaled_combined_models,"Unscaled Temporal Comparison of Tem
 
 ###Waiting for CSV file with the recruitment values
 
-model = lm(y_rec~ value , data = Scaled_combined_models) #Create the linear regression
-summary(model)
+###model = lm(y_rec~ value , data = Scaled_combined_models) #Create the linear regression
+###summary(model)
 
 
 ```
@@ -377,6 +377,118 @@ Scaled_combined_models %>%
   facet_wrap(~variable, scales = "free_y")+
 labs( color = ("Ocean Model"))
 
+
+```
+
+
+```{r}
+
+# Get a list of variables
+plot_list <- Scaled_combined_models %>%
+  split(.$variable) %>%
+  lapply(function(df) {
+    ggplot(df, aes(x = year, y = value, color = source)) +
+      geom_point() + 
+      geom_line() + 
+      scale_x_continuous(breaks = seq(min(df$year), max(df$year), by = 10)) +
+      labs(title = unique(df$variable), color = "Ocean Model") +
+      theme_minimal()
+  })
+
+```
+
+
+```{r}
+ggarrange(
+  plotlist = plot_list,
+  ncol = 2,
+  labels = NULL,  # Disable extra labels
+  align = "hv",
+  common.legend = TRUE,
+  legend = "bottom",
+  widths = 1,
+  font.label = list(size = 12, face = "plain")  # Simplify
+)
+
+
+```
+
+
+```{r}
+
+make_plot <- function(var_name) {
+  df <- filter(Scaled_combined_models, variable == var_name)
+  
+  ggplot(df, aes(x = year, y = value, color = source)) +
+    geom_point() +
+    geom_line() +
+    geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
+    labs(title = var_name, color = "Ocean Model") +
+    scale_x_continuous(breaks = seq(min(df$year), max(df$year), by = 5)) +
+    theme_bw() +
+    theme(
+      panel.spacing = unit(1, "lines"),
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank()
+    )
+}
+
+
+
+# Create individual plots
+LSTPjuv <- make_plot("LSTpjuv")
+LSTlarv <- make_plot("LSTlarv")
+CSTpjuv <- make_plot("CSTpjuv")
+CSTlarv <- make_plot("CSTlarv")
+Tpart <- make_plot("Tpart")
+Tcop <- make_plot("Tcop")
+MLDlarv <- make_plot("MLDlarv")
+MLDpjuv <- make_plot("MLDpjuv")
+MLDpart <- make_plot("MLDpart")
+
+
+```
+
+
+
+```{r}
+# Use correct variable names (case-sensitive!)
+vars <- c("LSTpjuv", "LSTlarv", "CSTpjuv", "CSTlarv", 
+          "Tpart", "Tcop", "MLDlarv", "MLDpjuv", "MLDpart")
+
+
+# Create styled plot list
+plot_list <- lapply(vars, make_plot)
+
+# Arrange plots in 3×3 grid
+all_variables_plot <- ggarrange(
+  plotlist = plot_list,
+  ncol = 3,
+  nrow = 3,
+  labels = LETTERS[1:length(plot_list)],
+  font.label = list(size = 12, face = "bold"),
+  align = "hv",
+  common.legend = TRUE,
+  legend = "bottom"
+)
+
+# Add single axis labels
+annotate_figure(
+  all_variables_plot,
+  left = text_grob("Standardized values", rot = 90, size = 14),
+  bottom = text_grob("Year", size = 14)
+)
+
+
+print (all_variables_plot)
+```
+
+
+
+```{r}
+
+# Save to PNG
+ggsave("standardized_comparison_grid.png", plot = all_variables_plot, width = 12, height = 10, dpi = 300)
 
 ```
 
@@ -519,11 +631,12 @@ UnScaled_combined_models %>%
 
 ```{r Scaled MLD plots}
 
-Scaled_combined_models %>%
+MLD_Plots <- Scaled_combined_models %>%
   filter(variable %in% c("MLDlarv", "MLDpart", "MLDpjuv")) %>%
   ggplot(aes(x = year, y = value, color = source)) +
   geom_point() + 
   geom_line() + 
+  geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
   scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 4)) +
   facet_wrap(~variable, scales = "free_y", ncol = 1, 
              labeller = labeller(variable = c("MLDlarv" = "Larval (MLDlarv)", "MLDpart" = "Parturition (MLDpart)", "MLDpjuv" = "Pelagic Juvenile (MLDpjuv)"))) +
@@ -533,6 +646,12 @@ Scaled_combined_models %>%
   theme(strip.text = element_text(size = 12, face = "bold"),
         strip.background = element_rect(fill = "lightblue", color = "grey"),
         panel.spacing = unit(1, "lines"))
+
+print(MLD_Plots)
+```
+```{r}
+# Save to PNG
+ggsave("standardized_MLD_grid.png", plot = MLD_Plots, width = 12, height = 10, dpi = 300)
 ```
 
 
@@ -555,400 +674,343 @@ UnScaled_combined_models %>%
 ```
 
 
-```{r GLORY Data Pre 2010}
-Pre2010_GLORY_YT <- GYL_datalong %>% 
-  filter(year >= 1993 & year <= 2010) %>%
+###Wrangling Monthly MOM6 Data
 
-print(Pre2010_GLORY_YT)
+```{r Bring in Monthly MOM6 Data}
+yellowtail_MOM6_monthly.df <- read.csv(
+  here("Data","Yellowtail","yellowtail_MOM6_monthly.csv"))
 
-```
 
-```{r GLORY Data Post 2010}
-Post2010_GLORY_YT <- GYL_datalong %>% 
-  filter(year >= 2010 & year <= 2025) %>%
 
-print(Post2010_GLORY_YT)
-
+head(yellowtail_MOM6_monthly.df)
 ```
 
 
-```{r MOM6 Data Pre 2010}
-Pre2010_MOM6_YT <- MOM6YL_datalong %>% 
-  filter(year >= 1993 & year <= 2010) %>%
-
-print(Pre2010_MOM6_YT)
-
-```
-
-```{r MOM6 Data post 2010}
-Post2010_MOM6_YT <- MOM6YL_datalong %>% 
-  filter(year >= 2010 & year <= 2025) %>%
-
-print(Post2010_MOM6_YT)
-
-```
+```{r Filtering Years & Seaons}
 
 
-
-
-```{r Combining Pre 2010 Datasets}
-
-pre2010_combined_models <- rbind(Pre2010_GLORY_YT, Pre2010_MOM6_YT)
-
-head(combined_models)
-
-```
-
-
-```{r Combining Post 2010 Datasets}
-
-post2010_combined_models <- rbind(Post2010_GLORY_YT, Post2010_MOM6_YT)
-
-head(combined_models)
-
-```
-
-
-```{r Pre-2010 Tcop Plot, echo=FALSE, message=FALSE, warning=FALSE}
-
-pre2010_combined_models %>%
-  filter(variable == "Tcop") %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2 )) +
-  labs(title = "Pre-2010 Temporal Comparison of Temperature Cues for Co-Population (Tcop)\nin Northern Yellowtail: GLORYS vs MOM6",
-       y = ("Temperature (°C)"),
-       x = ("Year"),
-       color = ("Ocean Model"))
-
-```
-
-
-
-```{r Post-2010 Tcop Plot, echo=FALSE, message=FALSE, warning=FALSE}
-
-post2010_combined_models %>%
-  filter(variable == "Tcop") %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2 )) +
-  labs(title = "Post-2010 Temporal Comparison of Temperature Cues for Copulation (Tcop)\nin Northern Yellowtail: GLORYS vs MOM6",
-       y = ("Temperature (°C)"),
-       x = ("Year"),
-       color = ("Ocean Model"))
-
-```
-
-###Pre-2010 Plot Making
-
-```{r combined pre/post 2010 Yellow Tail Tcop Plots, echo=FALSE, message=FALSE, warning=FALSE}
-
-p1 <- pre2010_combined_models %>%
-  filter(variable == "Tcop") %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2 )) +
-  labs(title = "Pre-2010 Temporal Comparison of Temperature Cues for Co-Population (Tcop)\nNorthern Yellowtail: GLORYS vs MOM6",
-       y = "Temperature (°C)",
-       x = "Year",
-       color = "Ocean Model")+ 
+season_MOM6_monthly.df  <- yellowtail_MOM6_monthly.df  %>%
   
-  ggtitle("Pre-2010 Temperature Cues for Co-Population (Tcop)",
-          subtitle = "Northern Yellowtail: GLORYS vs MOM6") +
-  theme(
-    plot.title = element_text(size = 12, face = "bold"),
-    plot.subtitle = element_text(size = 10)
-  )
+filter(year >= 1998 & year <= 2021) %>% ###Matching the GLORY years 
+  
+ mutate(Season = case_when(
+    month %in% 1:3 ~ "Winter",
+    month %in% 4:6 ~ "Spring",
+    month %in% 7:9 ~ "Summer",
+    month %in% 10:12 ~ "Autumn",
+    TRUE ~ NA_character_
+  ))
 
-p2 <- post2010_combined_models %>%
-  filter(variable == "Tcop") %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2 )) +
-  labs(title = "Post-2010 Temporal Comparison of Temperature Cues for Co-Population (Tcop)\nNorthern Yellowtail: GLORYS vs MOM6",
-       y = "Temperature (°C)",
-       x = "Year",
-       color = "Ocean Model") + ggtitle("Post-2010 Temperature Cues for Co-Population (Tcop)",
-          subtitle = "Northern Yellowtail: GLORYS vs MOM6") +
-  theme(
-    plot.title = element_text(size = 12, face = "bold"),
-    plot.subtitle = element_text(size = 10)
-  )
-
-
-p1 / p2
-```
-
-```{r Pre-2010 Facet Wrap Yellow Tail, echo=FALSE, message=FALSE, warning=FALSE}
-pre2010_combined_models %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 5 )) +
-  facet_wrap(~variable, scales = "free_y", ncol = 3)+
-labs( color = ("Ocean Model")) + ggtitle("Pre-2010 Oceanographic Variables",
-          subtitle = "Northern Yellowtail: GLORYS vs MOM6") +
-  theme(
-    plot.title = element_text(size = 12, face = "bold"),
-    plot.subtitle = element_text(size = 10)
-  )
-```
-
-```{r Pre-2010 CST Variables}
-
-pre2010_combined_models %>%
-  filter(variable %in% c("CSTlarv", "CSTpjuv")) %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2)) +
-  facet_wrap(~variable, scales = "free_y", ncol = 1, 
-             labeller = labeller(variable = c("CSTlarv" = "Larval (CSTlarv)", "CSTpjuv" = "Pelagic Juvenile (CSTpjuv)"))) +
-  labs(color = "Ocean Model") +
-  labs(title = "Comparison of Cross Shelf Transport (CST)\nfor Northern Yellowtail: GLORYS vs MOM6 (Pre-2010)") +
-  theme_bw() +
-  theme(strip.text = element_text(size = 12, face = "bold"),
-        strip.background = element_rect(fill = "lightblue", color = "grey"),
-        panel.spacing = unit(1, "lines"))
+head(season_MOM6_monthly.df)
 
 ```
 
 
-```{r Pre-2010 Facet Wrap LST Variables, echo=FALSE, message=FALSE, warning=FALSE}
 
-pre2010_combined_models %>%
-  filter(variable %in% c("LSTlarv", "LSTpjuv")) %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2)) +
-  facet_wrap(~variable, scales = "free_y", ncol = 1, 
-             labeller = labeller(variable = c("LSTlarv" = "Larval (LSTlarv)", "LSTpjuv" = "Pelagic Juvenile (CSTpjuv)"))) +
-  labs(color = "Ocean Model") +
-  labs(title = "Comparison of Longshore Transport (LST)\nfor Northern Yellowtail: GLORYS vs MOM6 (Pre2010)" ) +
-  theme_bw() +
-  theme(strip.text = element_text(size = 12, face = "bold"),
-        strip.background = element_rect(fill = "lightblue", color = "grey"),
-        panel.spacing = unit(1, "lines"))
+```{r Scaling Monthly MOM6 Data}
+
+Scaled_season_MOM6_monthly.df <- season_MOM6_monthly.df %>%
+  mutate_at(c('MLD_90_180', 'MLD_0_180', 'MLD_0_90', 'MLD_30_130', 'MLD_180_550', 'T_90_180', 'T_0_180', 'T_0_90', 'T_30_130','T_180_550','XV_90_180','XV_0_180', 'XV_0_90','XV_30_130','XV_180_550', 'YV_90_180', 'YV_0_180', 'YV_0_90', 'YV_30_130', 'YV_180_550' ), ~(scale(.) %>% as.vector)) %>%
+  mutate(scaled = TRUE)
+
+Scaled_season_MOM6_monthly.df <- na.omit(Scaled_season_MOM6_monthly.df )
+
+head(Scaled_season_MOM6_monthly.df)
+
+
 ```
 
-
-```{r pre2010 Temperature variables}
-pre2010_combined_models %>%
-  filter(variable %in% c("Tcop", "Tpart")) %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2)) +
-  facet_wrap(~variable, scales = "free_y", ncol = 1, 
-             labeller = labeller(variable = c("Tcop" = "Copulation (Tcop)", "Tpart" = "Parturition (Tpart)"))) +
-  labs(color = "Ocean Model") +
-  labs(title = "Comparison of Temperature\nfor Northern Yellowtail: GLORYS vs MOM6 (Pre-2010)" ) +
-  theme_bw() +
-  theme(strip.text = element_text(size = 12, face = "bold"),
-        strip.background = element_rect(fill = "lightblue", color = "grey"),
-        panel.spacing = unit(1, "lines"))
+```{r}
+apply(Scaled_season_MOM6_monthly.df, 2, sd)
 ```
 
-
-```{r Pre2010 Facet Wrap MLD variables}
-
-pre2010_MLD <- pre2010_combined_models %>%
-  filter(variable %in% c("MLDlarv", "MLDpart", "MLDpjuv")) %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2)) +
-  facet_wrap(~variable, scales = "free_y", ncol = 1, 
-             labeller = labeller(variable = c("MLDlarv" = "Larval (MLDlarv)", "MLDpart" = "Parturition (MLDpart)", "MLDpjuv" = "Pelagic Juvenile (MLDpjuv)"))) +
-  labs(color = "Ocean Model") +
-  labs(title = "Comparison of Mixed Layer Depth (MLD)\nfor Northern Yellowtail: GLORYS vs MOM6 (Pre-2010)") +
-  theme_bw() +
-  theme(strip.text = element_text(size = 12, face = "bold"),
-        strip.background = element_rect(fill = "lightblue", color = "grey"),
-        panel.spacing = unit(1, "lines"))
-
-pre2010_MLD
+```{r}
+apply(Scaled_season_MOM6_monthly.df, 2, mean) 
 ```
 
+```{r Make Monthly Unscaled MOM6 data long}
 
-###Post 2010 plot making
-
-```{r Post-2010 Facet Wrap Yellow Tail, echo=FALSE, message=FALSE, warning=FALSE}
-post2010_combined_models %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 5 )) +
-  facet_wrap(~variable, scales = "free_y")+
-labs( color = ("Ocean Model")) + ggtitle("Post-2010 Oceanographic Variables",
-          subtitle = "Northern Yellowtail: GLORYS vs MOM6") +
-  theme(
-    plot.title = element_text(size = 12, face = "bold"),
-    plot.subtitle = element_text(size = 10)
-  )
-```
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
-
-###Pre-2010 plot
-p3 <- pre2010_combined_models %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 5 )) +
-  facet_wrap(~variable, scales = "free_y")+
-labs( color = ("Ocean Model")) + ggtitle("Pre-2010 Oceanographic Variables",
-          subtitle = "Northern Yellowtail: GLORYS vs MOM6") +
-  theme(
-    plot.title = element_text(size = 12, face = "bold"),
-    plot.subtitle = element_text(size = 10)
+Unscaled_season_MOM6YL_datalong <- season_MOM6_monthly.df %>%
+  pivot_longer(
+    cols = c( MLD_90_180, MLD_0_180, MLD_0_90, MLD_30_130, MLD_180_550, T_90_180, T_0_180, T_0_90, T_30_130,T_180_550,XV_90_180,XV_0_180, XV_0_90,XV_30_130,XV_180_550, YV_90_180, YV_0_180, YV_0_90, YV_30_130, YV_180_550),
+    names_to = "variable",
+    values_to = "value"
+  ) %>%
+ mutate(
+    source = "MOM6",
+    scaled = FALSE,
+    Season = case_when(
+      month %in% 1:3 ~ "Winter",
+      month %in% 4:6 ~ "Spring",
+      month %in% 7:9 ~ "Summer",
+      month %in% 10:12 ~ "Autumn",
+      TRUE ~ NA_character_
+    )
   )
 
 
-###Post-2010 plot
-p4 <- post2010_combined_models %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 5 )) +
-  facet_wrap(~variable, scales = "free_y")+
-labs( color = ("Ocean Model")) + ggtitle("Post-2010 Oceanographic Variables",
-          subtitle = "Northern Yellowtail: GLORYS vs MOM6") +
-  theme(
-    plot.title = element_text(size = 12, face = "bold"),
-    plot.subtitle = element_text(size = 10)
+print(Unscaled_season_MOM6YL_datalong)
+```
+
+```{r Make Monthly Scaled MOM6 data long}
+
+Scaled_season_MOM6YL_datalong <- season_MOM6_monthly.df %>%
+  pivot_longer(
+    cols = c( MLD_90_180, MLD_0_180, MLD_0_90, MLD_30_130, MLD_180_550, T_90_180, T_0_180, T_0_90, T_30_130,T_180_550,XV_90_180,XV_0_180, XV_0_90,XV_30_130,XV_180_550, YV_90_180, YV_0_180, YV_0_90, YV_30_130, YV_180_550),
+    names_to = "variable",
+    values_to = "value"
+  ) %>%
+ mutate(
+    source = "MOM6",
+    scaled = TRUE,
+    Season = case_when(
+      month %in% 1:3 ~ "Winter",
+      month %in% 4:6 ~ "Spring",
+      month %in% 7:9 ~ "Summer",
+      month %in% 10:12 ~ "Autumn",
+      TRUE ~ NA_character_
+    )
+  )
+
+###Take mean of over the months
+print(Scaled_season_MOM6YL_datalong)
+```
+
+
+```{r Combining Monthly MOM6 Datasets}
+
+MOM6_monthlycombined_models <- rbind(
+  Scaled_season_MOM6YL_datalong,
+  Unscaled_season_MOM6YL_datalong
+) %>%
+  group_by(year, Season, variable, source, scaled) %>%
+  summarise(value = mean(value, na.rm = TRUE), .groups = "drop")
+
+head(MOM6_monthlycombined_models)
+
+
+###For some reason the values are all the same  betweeen scaled & not scaled
+
+```
+```{r All Season Plot Function}
+
+all_seasonal_function <- function(variable_name, dataframe, plot_title, y_axis) {
+  
+  dataframe %>%
+    filter(variable == variable_name) %>%
+    group_by(year, Season, variable, scaled, source) %>%
+    summarise(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
+    ggplot(aes(x = year, y = value, color = Season)) +
+    geom_point() + 
+    geom_line() + 
+    scale_x_continuous(breaks = seq(min(dataframe$year), max(dataframe$year), by = 5)) +
+    labs(title = plot_title,
+         y = y_axis,
+         x = "Year",
+         color = "Season") +
+    theme_minimal()
+}
+
+
+
+###Take means of each season so it plots mean of each season over each year
+```
+
+
+```{r}
+
+plot_function_by_season <- function(variable_name, season_name, dataframe, plot_title, y_axis) {
+  
+  dataframe %>%
+    filter(variable == variable_name, Season == season_name) %>%
+    group_by(year, source, scaled, variable, Season) %>%
+    summarise(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
+    ggplot(aes(x = year, y = value, color = source)) +
+    geom_point() + 
+    geom_line() + 
+    scale_x_continuous(breaks = seq(min(dataframe$year), max(dataframe$year), by = 5)) +
+    labs(title = paste(plot_title, "-", season_name),
+         y = y_axis,
+         x = "Year",
+         color = "Ocean Model") +
+    theme_minimal()
+}
+
+
+```
+
+```{r}
+plot_function_by_season("MLD_90_180","Summer",Scaled_season_MOM6YL_datalong, "Seasonality Distribution of MLD","value" )
+```
+
+
+```{r}
+all_seasonal_function("MLD_90_180",MOM6_monthlycombined_models, "Seasonality Distribution of MLD","value" )
+```
+
+
+```{r}
+all_seasonal_function("MLD_90_180",MOM6_monthlycombined_models, "Seasonality Distribution of MLD","value" )
+```
+
+
+###Wrangling Monthly GLORYs Data
+
+```{r Bring in Monthly GLORYs Data}
+yellowtail_GLORY_monthly.df <- read.csv(
+  here("Data","Yellowtail","MonthlyData.csv"))
+
+
+
+head(yellowtail_GLORY_monthly.df)
+```
+
+
+```{r Filtering Years & Seaons}
+
+
+season_GLORY_monthly.df  <- yellowtail_GLORY_monthly.df  %>%
+  
+filter(year >= 1998 & year <= 2021) %>% ###Matching the GLORY years 
+  
+ mutate(Season = case_when(
+    month %in% 1:3 ~ "Winter",
+    month %in% 4:6 ~ "Spring",
+    month %in% 7:9 ~ "Summer",
+    month %in% 10:12 ~ "Autumn",
+    TRUE ~ NA_character_
+  ))
+
+head(season_GLORY_monthly.df)
+
+```
+
+
+
+```{r Scaling Monthly MOM6 Data}
+
+
+Scaled_season_GLORY_monthly.df <- season_GLORY_monthly.df %>%
+  group_by(variable) %>%
+  mutate(value = scale(value) %>% as.vector()) %>%
+  ungroup() %>%
+mutate(
+    source = "MOM6",
+    scaled = TRUE,
+    Season = case_when(
+      month %in% 1:3 ~ "Winter",
+      month %in% 4:6 ~ "Spring",
+      month %in% 7:9 ~ "Summer",
+      month %in% 10:12 ~ "Autumn",
+      TRUE ~ NA_character_
+    )
+  )
+
+Scaled_season_GLORY_monthly.df <- na.omit(Scaled_season_GLORY_monthly.df)
+
+
+
+head(Scaled_season_GLORY_monthly.df)
+
+
+```
+
+```{r Make Monthly Unscaled MOM6 data long}
+
+Unscaled_season_GLORY_datalong <- season_GLORY_monthly.df %>%
+
+ mutate(
+    source = "MOM6",
+    scaled = FALSE,
+    Season = case_when(
+      month %in% 1:3 ~ "Winter",
+      month %in% 4:6 ~ "Spring",
+      month %in% 7:9 ~ "Summer",
+      month %in% 10:12 ~ "Autumn",
+      TRUE ~ NA_character_
+    )
   )
 
 
-p3/p4
-
-####How do I fix the scales of these?? Or do we split them up by 3 variables?
-
+print(Unscaled_season_MOM6YL_datalong)
 ```
 
-```{r Pre-2010 CST Variables}
 
-pre2010_combined_models %>%
-  filter(variable %in% c("CSTlarv", "CSTpjuv")) %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2)) +
-  facet_wrap(~variable, scales = "free_y", ncol = 1, 
-             labeller = labeller(variable = c("CSTlarv" = "Larval (CSTlarv)", "CSTpjuv" = "Pelagic Juvenile (CSTpjuv)"))) +
-  labs(color = "Ocean Model") +
-  labs(title = "Comparison of Cross Shelf Transport (CST)\nfor Northern Yellowtail: GLORYS vs MOM6 (Pre-2010)") +
-  theme_bw() +
-  theme(strip.text = element_text(size = 12, face = "bold"),
-        strip.background = element_rect(fill = "lightblue", color = "grey"),
-        panel.spacing = unit(1, "lines"))
+```{r Combining Monthly GLORY Datasets}
+
+GLORY_monthlycombined_models <- rbind(
+  Scaled_season_MOM6YL_datalong,
+  season_GLORY_monthly.df
+) %>%
+  group_by(year, Season, variable, source, scaled) %>%
+  summarise(value = mean(value, na.rm = TRUE), .groups = "drop")
+head(GLORY_monthlycombined_models)
 
 ```
 
 
-```{r post-2010 Facet Wrap LST Variables, echo=FALSE, message=FALSE, warning=FALSE}
-
-post2010_combined_models %>%
-  filter(variable %in% c("LSTlarv", "LSTpjuv")) %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2)) +
-  facet_wrap(~variable, scales = "free_y", ncol = 1, 
-             labeller = labeller(variable = c("LSTlarv" = "Larval (LSTlarv)", "LSTpjuv" = "Pelagic Juvenile (CSTpjuv)"))) +
-  labs(color = "Ocean Model") +
-  labs(title = "Comparison of Longshore Transport (LST)\nfor Northern Yellowtail: GLORYS vs MOM6 (Post2010)" ) +
-  theme_bw() +
-  theme(strip.text = element_text(size = 12, face = "bold"),
-        strip.background = element_rect(fill = "lightblue", color = "grey"),
-        panel.spacing = unit(1, "lines"))
-```
 
 
-```{r post-2010 Temperature variables}
-post2010_combined_models %>%
-  filter(variable %in% c("Tcop", "Tpart")) %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2)) +
-  facet_wrap(~variable, scales = "free_y", ncol = 1, 
-             labeller = labeller(variable = c("Tcop" = "Copulation (Tcop)", "Tpart" = "Parturition (Tpart)"))) +
-  labs(color = "Ocean Model") +
-  labs(title = "Comparison of Temperature\nfor Northern Yellowtail: GLORYS vs MOM6 (Post-2010)" ) +
-  theme_bw() +
-  theme(strip.text = element_text(size = 12, face = "bold"),
-        strip.background = element_rect(fill = "lightblue", color = "grey"),
-        panel.spacing = unit(1, "lines"))
-```
 
 
-```{r post-2010 Facet Wrap MLD variables}
-
-post2010_MLD <- post2010_combined_models %>%
-  filter(variable %in% c("MLDlarv", "MLDpart", "MLDpjuv")) %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(combined_models$year), max(combined_models$year), by = 2)) +
-  facet_wrap(~variable, scales = "free_y", ncol = 1, 
-             labeller = labeller(variable = c("MLDlarv" = "Larval (MLDlarv)", "MLDpart" = "Parturition (MLDpart)", "MLDpjuv" = "Pelagic Juvenile (MLDpjuv)"))) +
-  labs(color = "Ocean Model") +
-  labs(title = "Comparison of Mixed Layer Depth (MLD)\nfor Northern Yellowtail: GLORYS vs MOM6 (Post-2010)") +
-  theme_bw() +
-  theme(strip.text = element_text(size = 12, face = "bold"),
-        strip.background = element_rect(fill = "lightblue", color = "grey"),
-        panel.spacing = unit(1, "lines"))
-
-post2010_MLD
-```
-### pre2010 and post2010 comparisons
-
-```{r fig.height=10, fig.width=12}
 
 
-pre2010_MLD <- pre2010_combined_models %>%
-filter(variable %in% c("MLDlarv", "MLDpart", "MLDpjuv")) %>%
-mutate(Period = "Pre-2010")
-
-post2010_MLD <- post2010_combined_models %>%
-filter(variable %in% c("MLDlarv", "MLDpart", "MLDpjuv")) %>%
-mutate(Period = "Post-2010")
-
-combined_MLD <- bind_rows(pre2010_MLD, post2010_MLD)
-
-combined_MLD$variable <- factor(combined_MLD$variable,
-levels = c("MLDlarv", "MLDpart", "MLDpjuv"),
-labels = c("Larval (MLDlarv)", "Parturition (MLDpart)", "Pelagic Juvenile (MLDpjuv)")
-)
 
 
-ggplot(combined_MLD, aes(x = year, y = value, color = source)) +
-geom_point() +
-geom_line() + 
-scale_x_continuous(breaks = seq(min(combined_MLD$year), max(combined_MLD$year), by = 5)) +
-facet_grid(Period ~ variable, scales = "free_y") +
-labs(
-color = "Ocean Model",
-title = "Comparison of Mixed Layer Depth (MLD)\nfor Northern Yellowtail: GLORYS vs MOM6",
-x = "Year", y = "MLD (m)"
-) +
-theme_bw() +
-theme(
-strip.text = element_text(size = 12, face = "bold"),
-strip.background = element_rect(fill = "lightblue", color = "grey"),
-panel.spacing = unit(1, "lines"),
-axis.text.x = element_text(angle = 45, hjust = 1)
-)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r GAMS }
+
+set.seed(99)
+
+year<- rep(seq(1980, 2009),2) # a variable for year
+
+modelnames<- rep(c("Model 1", "Model 2"), each=30) # a variable for models,
+#equivalent to ROMS/GLORYs
+
+cov1mod1<- arima.sim(list(order = c(1,0,0), ar = 0.7), n = 30)%>% #random time series
+scale() # standardize it!
+
+cov1mod2 <- cov1mod1+rnorm(n= 30, mean = 1, sd=0.3)%>%
+scale()#second time series that
+#covaries with the first
+
+set.seed(150)
+
+cov2mod1<- arima.sim(list(order = c(1,0,0), ar = 0.5), n = 30)%>% #random time series
+scale() # standardize it!
+cov2mod2 <- cov2mod1+rnorm(n= 30, mean =1, sd=1)%>%
+scale()
+#second time series that
+#covaries with the first
 
 ```
-
-
 
 

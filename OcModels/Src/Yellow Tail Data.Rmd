@@ -19,10 +19,20 @@ library(here)
 library(patchwork)
 library(standardize)
 library(ggpubr)
+library(gridExtra)
 ```
 
 ```{r clear environment}
 rm(list = ls())
+```
+
+```{r}
+system("git clone https://github.com/mfeddern/OceanModelIndexComparison.git")
+```
+```{r}
+setwd("OceanModelIndexComparison")
+system("git pull origin main")  # or replace 'main' with the correct branch
+
 ```
 
 
@@ -31,10 +41,11 @@ rm(list = ls())
 ```{r read in Glory Yellow Tail Data}
 
 Full_Glory_Yellow_Tail.df <- read.csv(
-  here("Data", "Yellowtail", "2024Env-annual-yellowtail_GLORYS_UNSTANDARDIZED.csv")
+  here("Data","Yellowtail","2024Env-annual-yellowtail_GLORYS_UNSTANDARDIZED.csv")
 )
 
 Full_Glory_Yellow_Tail.df <- na.omit(Full_Glory_Yellow_Tail.df) ###Take out NA's
+
 
 ```
 
@@ -508,8 +519,7 @@ FacetWrap_function(
 
 ```{r Scaled CST plots, echo=FALSE, message=FALSE, warning=FALSE}
 
-
-CST_ScaledPlots<- Scaled_combined_models %>%
+CST_ScaledPlots <- Scaled_combined_models %>%
   filter(variable %in% c("CSTlarv", "CSTpjuv")) %>%
   ggplot(aes(x = year, y = value, color = source)) +
   geom_point() + 
@@ -517,15 +527,24 @@ CST_ScaledPlots<- Scaled_combined_models %>%
   geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
   scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 4)) +
   facet_wrap(~variable, scales = "free_y", ncol = 1, 
-             labeller = labeller(variable = c("CSTlarv" = "Larval (CSTlarv)", "CSTpjuv" = "Pelagic Juvenile (CSTpjuv)"))) +
-  labs(color = "Ocean Model") +
-  labs(title = "Scaled Comparison of Cross Shelf Transport (CST)\nfor Northern Yellowtail: GLORYS vs MOM6") +
-  theme_bw() +
-  theme(strip.text = element_text(size = 12, face = "bold"),
-        strip.background = element_rect(fill = "lightblue", color = "grey"),
-        panel.spacing = unit(1, "lines"))
+             labeller = labeller(variable = c(
+               "CSTlarv" = "Larval (CSTlarv)",
+               "CSTpjuv" = "Pelagic Juvenile (CSTpjuv)"
+             ))) +
+  labs(
+    color = "Ocean Model",
+    title = "Scaled Comparison of Cross Shelf Transport (CST)\nfor Northern Yellowtail: GLORYS vs MOM6"
+  ) +
+  theme_bw() +  # Apply base theme first
+  theme(
+    plot.title = element_text(size = 16),  # Adjust as needed
+    strip.text = element_text(size = 14, face = "bold"),
+    strip.background = element_rect(fill = "lightblue", color = "grey"),
+    panel.spacing = unit(1, "lines")
+  )
 
 print(CST_ScaledPlots)
+
 ```
 
 
@@ -639,15 +658,23 @@ MLD_Plots <- Scaled_combined_models %>%
   geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
   scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 4)) +
   facet_wrap(~variable, scales = "free_y", ncol = 1, 
-             labeller = labeller(variable = c("MLDlarv" = "Larval (MLDlarv)", "MLDpart" = "Parturition (MLDpart)", "MLDpjuv" = "Pelagic Juvenile (MLDpjuv)"))) +
-  labs(color = "Ocean Model") +
-  labs(title = "Scaled Comparison of Mixed Layer Depth (MLD)\nfor Northern Yellowtail: GLORYS vs MOM6") +
-  theme_bw() +
-  theme(strip.text = element_text(size = 12, face = "bold"),
-        strip.background = element_rect(fill = "lightblue", color = "grey"),
-        panel.spacing = unit(1, "lines"))
+             labeller = labeller(variable = c(
+               "MLDlarv" = "Larval (MLDlarv)", 
+               "MLDpart" = "Parturition (MLDpart)", 
+               "MLDpjuv" = "Pelagic Juvenile (MLDpjuv)"
+             ))) +
+  labs(color = "Ocean Model",
+       title = "Scaled Comparison of Mixed Layer Depth (MLD)\nfor Northern Yellowtail: GLORYS vs MOM6") +
+  theme_bw() +  
+  theme(
+    plot.title = element_text(size = 16),
+    strip.text = element_text(size = 14, face = "bold"),
+    strip.background = element_rect(fill = "lightblue", color = "grey"),
+    panel.spacing = unit(1, "lines")
+  )
 
 print(MLD_Plots)
+
 ```
 ```{r}
 # Save to PNG
@@ -706,6 +733,37 @@ head(season_MOM6_monthly.df)
 ```
 
 
+```{r Make Monthly Unscaled MOM6 data long}
+
+# Explicitly convert all pivot columns to numeric
+cols_to_pivot <- c("MLD_90_180", "MLD_0_180", "MLD_0_90", "MLD_30_130", "MLD_180_550", 
+                   "T_90_180", "T_0_180", "T_0_90", "T_30_130", "T_180_550", 
+                   "XV_90_180", "XV_0_180", "XV_0_90", "XV_30_130", "XV_180_550", 
+                   "YV_90_180", "YV_0_180", "YV_0_90", "YV_30_130", "YV_180_550")
+
+# Ensure all those columns are numeric
+season_MOM6_monthly.df <- season_MOM6_monthly.df %>%
+  mutate(across(all_of(cols_to_pivot), ~ as.numeric(.)))
+
+# Pivot longer safely
+Unscaled_season_MOM6YL_datalong <- season_MOM6_monthly.df %>%
+  pivot_longer(
+    cols = all_of(cols_to_pivot),
+    names_to = "variable",
+    values_to = "value"
+  ) %>%
+  mutate(
+    source = "MOM6",
+    scaled = FALSE
+  )
+
+
+head(Unscaled_season_MOM6YL_datalong)
+
+```
+
+
+
 
 ```{r Scaling Monthly MOM6 Data}
 
@@ -728,39 +786,33 @@ apply(Scaled_season_MOM6_monthly.df, 2, sd)
 apply(Scaled_season_MOM6_monthly.df, 2, mean) 
 ```
 
-```{r Make Monthly Unscaled MOM6 data long}
-
-Unscaled_season_MOM6YL_datalong <- season_MOM6_monthly.df %>%
-  pivot_longer(
-    cols = c( MLD_90_180, MLD_0_180, MLD_0_90, MLD_30_130, MLD_180_550, T_90_180, T_0_180, T_0_90, T_30_130,T_180_550,XV_90_180,XV_0_180, XV_0_90,XV_30_130,XV_180_550, YV_90_180, YV_0_180, YV_0_90, YV_30_130, YV_180_550),
-    names_to = "variable",
-    values_to = "value"
-  ) %>%
- mutate(
-    source = "MOM6",
-    scaled = FALSE,
-    Season = case_when(
-      month %in% 1:3 ~ "Winter",
-      month %in% 4:6 ~ "Spring",
-      month %in% 7:9 ~ "Summer",
-      month %in% 10:12 ~ "Autumn",
-      TRUE ~ NA_character_
-    )
-  )
-
-
-print(Unscaled_season_MOM6YL_datalong)
-```
 
 ```{r Make Monthly Scaled MOM6 data long}
 
-Scaled_season_MOM6YL_datalong <- season_MOM6_monthly.df %>%
+library(scales)  # Optional for nicer printing
+
+# Define the target columns
+cols_to_scale <- c("MLD_90_180", "MLD_0_180", "MLD_0_90", "MLD_30_130", "MLD_180_550", 
+                   "T_90_180", "T_0_180", "T_0_90", "T_30_130", "T_180_550", 
+                   "XV_90_180", "XV_0_180", "XV_0_90", "XV_30_130", "XV_180_550", 
+                   "YV_90_180", "YV_0_180", "YV_0_90", "YV_30_130", "YV_180_550")
+
+# Make sure the columns are numeric before scaling
+season_MOM6_monthly.df <- season_MOM6_monthly.df %>%
+  mutate(across(all_of(cols_to_scale), ~ as.numeric(.)))
+
+# Scale the values (column-wise z-score)
+scaled_df <- season_MOM6_monthly.df %>%
+  mutate(across(all_of(cols_to_scale), scale))
+
+# Pivot longer
+Scaled_season_MOM6YL_datalong <- scaled_df %>%
   pivot_longer(
-    cols = c( MLD_90_180, MLD_0_180, MLD_0_90, MLD_30_130, MLD_180_550, T_90_180, T_0_180, T_0_90, T_30_130,T_180_550,XV_90_180,XV_0_180, XV_0_90,XV_30_130,XV_180_550, YV_90_180, YV_0_180, YV_0_90, YV_30_130, YV_180_550),
+    cols = all_of(cols_to_scale),
     names_to = "variable",
     values_to = "value"
   ) %>%
- mutate(
+  mutate(
     source = "MOM6",
     scaled = TRUE,
     Season = case_when(
@@ -772,9 +824,22 @@ Scaled_season_MOM6YL_datalong <- season_MOM6_monthly.df %>%
     )
   )
 
-###Take mean of over the months
+# Print for review
 print(Scaled_season_MOM6YL_datalong)
+
 ```
+
+```{r}
+  Scaled_season_MOM6YL_datalong <- Scaled_season_MOM6YL_datalong %>%
+    mutate(Season = case_when(
+      Season == "Winter" ~ "Winter (Jan–Mar)",
+      Season == "Spring" ~ "Spring (Apr–Jun)",
+      Season == "Summer" ~ "Summer (Jul–Sep)",
+      Season == "Autumn" ~ "Autumn (Oct–Dec)",
+      TRUE ~ Season
+    ))
+```
+
 
 
 ```{r Combining Monthly MOM6 Datasets}
@@ -794,14 +859,15 @@ head(MOM6_monthlycombined_models)
 ```
 ```{r All Season Plot Function}
 
-all_seasonal_function <- function(variable_name, dataframe, plot_title, y_axis) {
+MOM6all_seasonal_function <- function(variable_name, dataframe, plot_title, y_axis) {
   
   dataframe %>%
     filter(variable == variable_name) %>%
     group_by(year, Season, variable, scaled, source) %>%
     summarise(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
     ggplot(aes(x = year, y = value, color = Season)) +
-    geom_point() + 
+    geom_point() +  
+    geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
     geom_line() + 
     scale_x_continuous(breaks = seq(min(dataframe$year), max(dataframe$year), by = 5)) +
     labs(title = plot_title,
@@ -840,17 +906,13 @@ plot_function_by_season <- function(variable_name, season_name, dataframe, plot_
 ```
 
 ```{r}
-plot_function_by_season("MLD_90_180","Summer",Scaled_season_MOM6YL_datalong, "Seasonality Distribution of MLD","value" )
+plot_function_by_season("MLD_0_180","Summer",Scaled_season_MOM6YL_datalong, "Seasonality Distribution of MLD","value" )
 ```
 
 
-```{r}
-all_seasonal_function("MLD_90_180",MOM6_monthlycombined_models, "Seasonality Distribution of MLD","value" )
-```
-
 
 ```{r}
-all_seasonal_function("MLD_90_180",MOM6_monthlycombined_models, "Seasonality Distribution of MLD","value" )
+MOM6all_seasonal_function("MLD_90_180",Scaled_season_MOM6YL_datalong, "MOM6 Seasonality Distribution of MLD","value" )
 ```
 
 
@@ -885,16 +947,30 @@ head(season_GLORY_monthly.df)
 
 ```
 
+```{r}
+season_GLORY_monthly.df <- season_GLORY_monthly.df %>%
+    mutate(Season = case_when(
+      Season == "Winter" ~ "Winter (Jan–Mar)",
+      Season == "Spring" ~ "Spring (Apr–Jun)",
+      Season == "Summer" ~ "Summer (Jul–Sep)",
+      Season == "Autumn" ~ "Autumn (Oct–Dec)",
+      TRUE ~ Season
+    ))
+```
 
 
-```{r Scaling Monthly MOM6 Data}
+```{r Scaling Monthly GLORY Data}
 
+
+library(dplyr)
+library(tidyr)
 
 Scaled_season_GLORY_monthly.df <- season_GLORY_monthly.df %>%
-  group_by(variable) %>%
-  mutate(value = scale(value) %>% as.vector()) %>%
+  group_by(variable, name) %>%
+  mutate(scaled_value = scale(value) %>% as.vector()) %>%
   ungroup() %>%
-mutate(
+  mutate(
+    value = scaled_value,           # overwrite value with scaled version
     source = "MOM6",
     scaled = TRUE,
     Season = case_when(
@@ -904,18 +980,35 @@ mutate(
       month %in% 10:12 ~ "Autumn",
       TRUE ~ NA_character_
     )
-  )
-
-Scaled_season_GLORY_monthly.df <- na.omit(Scaled_season_GLORY_monthly.df)
+  ) %>%
+  select(-scaled_value) %>%         # clean up helper column
+  drop_na(value)                    # only remove rows where 'value' is NA
 
 
 
 head(Scaled_season_GLORY_monthly.df)
 
 
+
+
 ```
 
-```{r Make Monthly Unscaled MOM6 data long}
+```{r}
+Scaled_season_GLORY_monthly.df <- Scaled_season_GLORY_monthly.df%>%
+    mutate(Season = case_when(
+      Season == "Winter" ~ "Winter (Jan–Mar)",
+      Season == "Spring" ~ "Spring (Apr–Jun)",
+      Season == "Summer" ~ "Summer (Jul–Sep)",
+      Season == "Autumn" ~ "Autumn (Oct–Dec)",
+      TRUE ~ Season
+    ))
+```
+
+
+
+
+
+```{r Make Monthly Unscaled GLORY data long}
 
 Unscaled_season_GLORY_datalong <- season_GLORY_monthly.df %>%
 
@@ -932,29 +1025,119 @@ Unscaled_season_GLORY_datalong <- season_GLORY_monthly.df %>%
   )
 
 
-print(Unscaled_season_MOM6YL_datalong)
+print(Unscaled_season_GLORY_datalong)
 ```
 
 
 ```{r Combining Monthly GLORY Datasets}
 
-GLORY_monthlycombined_models <- rbind(
-  Scaled_season_MOM6YL_datalong,
-  season_GLORY_monthly.df
+GLORY_monthlycombined_models <- bind_rows(
+  Scaled_season_GLORY_monthly.df,
+  Unscaled_season_GLORY_datalong
 ) %>%
-  group_by(year, Season, variable, source, scaled) %>%
+  group_by(year,name, Season, variable, source, scaled) %>%
   summarise(value = mean(value, na.rm = TRUE), .groups = "drop")
+
+
+
 head(GLORY_monthlycombined_models)
+
+```
+
+```{r}
+
+GLORYplot_function_by_season <- function(variable_name, season_name, dataframe, plot_title, y_axis) {
+  
+  dataframe %>%
+    filter(name == variable_name, Season == season_name) %>%
+    group_by(year, source, scaled, variable, Season) %>%
+    summarise(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
+    ggplot(aes(x = year, y = value, color = source)) +
+    geom_point() + 
+    geom_line() + 
+     geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
+    scale_x_continuous(breaks = seq(min(dataframe$year), max(dataframe$year), by = 5)) +
+    labs(title = paste(plot_title, "-", season_name),
+         y = y_axis,
+         x = "Year",
+         color = "Ocean Model") +
+    theme_minimal()
+}
+
 
 ```
 
 
 
+```{r}
+GLORYplot_function_by_season("lst_90_180","Summer",Scaled_season_GLORY_monthly.df, "Seasonality Distribution of LST","value" )
+```
+
+
+```{r GLORY All Season Plot Function}
+
+GLORYall_seasonal_function <- function(variable_name, dataframe, plot_title, y_axis) {
+  
+  dataframe %>%
+    filter(name == variable_name) %>%
+    group_by(year, Season, name) %>%
+    summarise(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
+    ggplot(aes(x = year, y = value, color = Season)) +
+    geom_point() +
+    geom_line() +
+  geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
+    facet_wrap(~ name, scales = "free_y") +  # Facet by name to see all in one plot
+    scale_x_continuous(breaks = seq(min(dataframe$year), max(dataframe$year), by = 5)) +
+    labs(title = plot_title,
+         y = y_axis,
+         x = "Year",
+         color = "Season") +
+    theme_minimal()
+}
+
+
+```
+
+```{r}
+GLORYall_seasonal_function("lst_90_180", Scaled_season_GLORY_monthly.df, "GLORY Seasonality Distribution of LST","value" )
+```
+
+
+```{r}
+GLORYall_seasonal_function("mld_0_90", Scaled_season_GLORY_monthly.df, "GLORY Seasonality Distribution of MLD","value" )
+```
+
+
+```{r}
+
+
+library(patchwork)
+
+
+p1 <- MOM6all_seasonal_function("MLD_90_180", Scaled_season_MOM6YL_datalong, 
+                                "MOM6 Seasonality Distribution of MLD", "value") +
+  theme(legend.position = "none")  # remove legend
+
+p2 <- GLORYall_seasonal_function("mld_0_90", Scaled_season_GLORY_monthly.df, 
+                                 "GLORY Seasonality Distribution of MLD", "value")
+
+
+combined <- (p1 / p2) + plot_layout(guides = "collect") & theme(legend.position = "right")
+
+print(combined)
+
+
+ggsave(
+  filename = "seasonal_MLD_comparison.png",
+  plot     = combined,
+  width    = 12,
+  height   = 6,
+  dpi      = 300)
 
 
 
 
-
+```
 
 
 

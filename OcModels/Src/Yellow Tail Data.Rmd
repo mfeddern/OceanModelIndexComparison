@@ -967,10 +967,8 @@ library(tidyr)
 
 Scaled_season_GLORY_monthly.df <- season_GLORY_monthly.df %>%
   group_by(variable, name) %>%
-  mutate(scaled_value = scale(value) %>% as.vector()) %>%
   ungroup() %>%
-  mutate(
-    value = scaled_value,           # overwrite value with scaled version
+  mutate(       # overwrite value with scaled version
     source = "MOM6",
     scaled = TRUE,
     Season = case_when(
@@ -981,6 +979,9 @@ Scaled_season_GLORY_monthly.df <- season_GLORY_monthly.df %>%
       TRUE ~ NA_character_
     )
   ) %>%
+  group_by(variable, name, Season) %>%
+  mutate(scaled_value = scale(value) %>% as.vector()) %>%
+  mutate(value=scaled_value)%>%
   select(-scaled_value) %>%         # clean up helper column
   drop_na(value)                    # only remove rows where 'value' is NA
 

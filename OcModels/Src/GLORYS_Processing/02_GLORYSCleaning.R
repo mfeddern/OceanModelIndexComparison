@@ -33,4 +33,10 @@ full_data <- lst%>%
   select(-date)%>%
   mutate(Model = "GLORYS")
 
+newnames = c("YV_90_180","YV_0_180","YV_0_90","YV_30_130","YV_180_550",
+             "XV_90_180","XV_0_180","XV_0_90","XV_30_130","XV_180_550",
+             "MLD_0_180","MLD_0_90", "MLD_30_130",
+             "T_90_180","T_0_180","T_0_90","T_30_130","T_180_550")
+data.frame(name=unique(full_data$name), newname=)
+
 fwrite(full_data, "Data/Yellowtail/MonthlyData.csv")

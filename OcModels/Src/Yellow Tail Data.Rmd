@@ -52,7 +52,8 @@ Full_Glory_Yellow_Tail.df <- na.omit(Full_Glory_Yellow_Tail.df) ###Take out NA's
 
 ```{r Filter out Variables}
 Full_Glory_Yellow_Tail.df <- Full_Glory_Yellow_Tail.df %>%
-  select(year, Tcop, Tpart, MLDpart, MLDlarv, MLDpjuv, CSTlarv, CSTpjuv, LSTlarv, LSTpjuv)
+  select(year, Tcop, Tpart, MLDpart, MLDlarv, MLDpjuv, CSTlarv, CSTpjuv, LSTlarv, LSTpjuv)%>%
+  mutate(source = "GLORY")
 
 head(Full_Glory_Yellow_Tail.df)
   
@@ -152,40 +153,29 @@ Full_MOM6_Yellow_Tail.df <- read.csv(
 head(Full_MOM6_Yellow_Tail.df)
 ```
 
-
-```{r Filter MOM6 Variables }
-
-Filtered_MOM6_Yellow_Tail.df <- Full_MOM6_Yellow_Tail.df%>% select(year, Tcop, Tpart, MLDpart, MLDlarv, MLDpjuv,XVlarv, XVpjuv, YVlarv, YVpjuv)
-
-
-```
-
-
-```{r Renaming MOM6 Variables to match GLORY Variable Names}
-
-Filtered_MOM6_Yellow_Tail.df <- Filtered_MOM6_Yellow_Tail.df %>%
-
-
+```{r}
+Full_MOM6_Yellow_Tail.df <- Full_MOM6_Yellow_Tail.df %>%
+  select(
+    year, Tcop, Tpart, MLDpart, MLDlarv, MLDpjuv,
+    XVlarv, XVpjuv, YVlarv, YVpjuv
+  ) %>%
+  mutate(source = "MOM6") %>%
   rename(
     CSTlarv = XVlarv,
     CSTpjuv = XVpjuv,
     LSTlarv = YVlarv,
     LSTpjuv = YVpjuv
   ) %>%
+  filter(year >= 1998 & year <= 2021) %>%   # Match GLORY's year range
+  na.omit()  # Remove rows with any NAs
 
- filter(year >= 1998 & year <= 2021) ### Matches MOM6 years to the years GLORY dataset had
-
-Filtered_MOM6_Yellow_Tail.df <- na.omit(Filtered_MOM6_Yellow_Tail.df)
-
-
-
-print(Filtered_MOM6_Yellow_Tail.df)
+print(Full_MOM6_Yellow_Tail.df)
 ```
 
 
 ```{r Scaling MOM6 Data}
 
-Scaled_MOM6_Yellow_Tail.df <- Filtered_MOM6_Yellow_Tail.df %>%
+Scaled_MOM6_Yellow_Tail.df <- Full_MOM6_Yellow_Tail.df %>%
   mutate_at(c('Tcop', 'Tpart', 'MLDpart', 'MLDlarv', 'MLDpjuv', 'CSTlarv', 'CSTpjuv', 'LSTlarv', 'LSTpjuv'), ~(scale(.) %>% as.vector)) %>%
   mutate(scaled = TRUE)
 
@@ -205,7 +195,7 @@ apply(Scaled_MOM6_Yellow_Tail.df, 2, mean)
 
 ```{r Make Unscaled MOM6 data long}
 
-Unscaled_MOM6YL_datalong <- Filtered_MOM6_Yellow_Tail.df %>%
+Unscaled_MOM6YL_datalong <- Full_MOM6_Yellow_Tail.df %>%
   pivot_longer(
     cols = c( Tcop, Tpart, MLDpart,MLDlarv, MLDpjuv, CSTlarv, CSTpjuv,LSTlarv, LSTpjuv, LSTlarv, LSTpjuv),
     names_to = "variable",
@@ -789,24 +779,21 @@ apply(Scaled_season_MOM6_monthly.df, 2, mean)
 
 ```{r Make Monthly Scaled MOM6 data long}
 
-library(scales)  # Optional for nicer printing
+library(scales)  
 
-# Define the target columns
+
 cols_to_scale <- c("MLD_90_180", "MLD_0_180", "MLD_0_90", "MLD_30_130", "MLD_180_550", 
                    "T_90_180", "T_0_180", "T_0_90", "T_30_130", "T_180_550", 
                    "XV_90_180", "XV_0_180", "XV_0_90", "XV_30_130", "XV_180_550", 
                    "YV_90_180", "YV_0_180", "YV_0_90", "YV_30_130", "YV_180_550")
 
-# Make sure the columns are numeric before scaling
+
+# Step 1: Ensure numeric columns
 season_MOM6_monthly.df <- season_MOM6_monthly.df %>%
   mutate(across(all_of(cols_to_scale), ~ as.numeric(.)))
 
-# Scale the values (column-wise z-score)
-scaled_df <- season_MOM6_monthly.df %>%
-  mutate(across(all_of(cols_to_scale), scale))
-
-# Pivot longer
-Scaled_season_MOM6YL_datalong <- scaled_df %>%
+# Step 2: Pivot longer
+Scaled_season_MOM6YL_datalong <- season_MOM6_monthly.df %>%
   pivot_longer(
     cols = all_of(cols_to_scale),
     names_to = "variable",
@@ -822,7 +809,15 @@ Scaled_season_MOM6YL_datalong <- scaled_df %>%
       month %in% 10:12 ~ "Autumn",
       TRUE ~ NA_character_
     )
-  )
+  ) %>%
+  group_by(variable, Season) %>%
+  mutate(scaled_value = scale(value) %>% as.vector()) %>%
+  mutate(value = scaled_value) %>%
+  select(-scaled_value) %>%
+  drop_na(value) %>%
+  ungroup()
+
+
 
 # Print for review
 print(Scaled_season_MOM6YL_datalong)
@@ -969,7 +964,7 @@ Scaled_season_GLORY_monthly.df <- season_GLORY_monthly.df %>%
   group_by(variable, name) %>%
   ungroup() %>%
   mutate(       # overwrite value with scaled version
-    source = "MOM6",
+    source = "GLORY",
     scaled = TRUE,
     Season = case_when(
       month %in% 1:3 ~ "Winter",
@@ -1065,7 +1060,6 @@ GLORYplot_function_by_season <- function(variable_name, season_name, dataframe, 
     theme_minimal()
 }
 
-
 ```
 
 
@@ -1140,61 +1134,81 @@ ggsave(
 
 ```
 
+###GAMS Model
 
 
+```{r}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r GAMS }
-
-set.seed(99)
-
-year<- rep(seq(1980, 2009),2) # a variable for year
-
-modelnames<- rep(c("Model 1", "Model 2"), each=30) # a variable for models,
-#equivalent to ROMS/GLORYs
-
-cov1mod1<- arima.sim(list(order = c(1,0,0), ar = 0.7), n = 30)%>% #random time series
-scale() # standardize it!
-
-cov1mod2 <- cov1mod1+rnorm(n= 30, mean = 1, sd=0.3)%>%
-scale()#second time series that
-#covaries with the first
-
-set.seed(150)
-
-cov2mod1<- arima.sim(list(order = c(1,0,0), ar = 0.5), n = 30)%>% #random time series
-scale() # standardize it!
-cov2mod2 <- cov2mod1+rnorm(n= 30, mean =1, sd=1)%>%
-scale()
-#second time series that
-#covaries with the first
+# Remove NA rows from both data frames
+Full_Glory_Yellow_Tail.df <- na.omit(Full_Glory_Yellow_Tail.df)
+Full_MOM6_Yellow_Tail.df <- na.omit(Full_MOM6_Yellow_Tail.df)
 
 ```
+
+
+```{r}
+#this tells us the covariance
+cov1<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(Tcop),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tcop))
+
+
+
+cov2<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(Tpart),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tpart))
+
+```
+
+```{r}
+#this tells us the covariance
+cor1<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(Tcop),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tcop))
+
+
+
+cor2<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(Tpart),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tpart))
+
+# Create data frame with named covariates
+results_df <- data.frame(
+  covariate = c("Tcop", "Tpart"),
+  covariance = c(cov1, cov2),
+  correlation = c(cor1, cor2)
+)
+
+print(results_df)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

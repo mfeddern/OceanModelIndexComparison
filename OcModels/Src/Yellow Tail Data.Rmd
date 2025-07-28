@@ -44,7 +44,7 @@ Full_Glory_Yellow_Tail.df <- read.csv(
   here("Data","Yellowtail","2024Env-annual-yellowtail_GLORYS_UNSTANDARDIZED.csv")
 )
 
-Full_Glory_Yellow_Tail.df <- na.omit(Full_Glory_Yellow_Tail.df) ###Take out NA's
+Full_Glory_Yellow_Tail.df <- na.omit(Full_Glory_Yellow_Tail.df) 
 
 
 ```
@@ -848,9 +848,6 @@ MOM6_monthlycombined_models <- rbind(
 
 head(MOM6_monthlycombined_models)
 
-
-###For some reason the values are all the same  betweeen scaled & not scaled
-
 ```
 ```{r All Season Plot Function}
 
@@ -880,7 +877,7 @@ MOM6all_seasonal_function <- function(variable_name, dataframe, plot_title, y_ax
 
 ```{r}
 
-plot_function_by_season <- function(variable_name, season_name, dataframe, plot_title, y_axis) {
+MOM6plot_function_by_season <- function(variable_name, season_name, dataframe, plot_title, y_axis) {
   
   dataframe %>%
     filter(variable == variable_name, Season == season_name) %>%
@@ -889,6 +886,7 @@ plot_function_by_season <- function(variable_name, season_name, dataframe, plot_
     ggplot(aes(x = year, y = value, color = source)) +
     geom_point() + 
     geom_line() + 
+      geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
     scale_x_continuous(breaks = seq(min(dataframe$year), max(dataframe$year), by = 5)) +
     labs(title = paste(plot_title, "-", season_name),
          y = y_axis,
@@ -901,9 +899,65 @@ plot_function_by_season <- function(variable_name, season_name, dataframe, plot_
 ```
 
 ```{r}
-plot_function_by_season("MLD_0_180","Summer",Scaled_season_MOM6YL_datalong, "Seasonality Distribution of MLD","value" )
+MOM6_SummerMLD <- MOM6plot_function_by_season("MLD_0_180","Summer (Jul–Sep)",Scaled_season_MOM6YL_datalong, "Seasonality Distribution of MLD","value" )
 ```
 
+
+```{r}
+# Create each summer plot
+MOM6_SummerMLD <- MOM6plot_function_by_season(
+  "MLD_0_180", "Summer (Jul–Sep)", Scaled_season_MOM6YL_datalong,
+  "MLD", "value"
+)
+
+MOM6_SummerTemp <- MOM6plot_function_by_season(
+  "T_0_180", "Summer (Jul–Sep)", Scaled_season_MOM6YL_datalong,
+  "Temp", "value"
+)
+
+MOM6_SummerXV <- MOM6plot_function_by_season(
+  "XV_0_180", "Summer (Jul–Sep)", Scaled_season_MOM6YL_datalong,
+  "XV", "value"
+)
+
+MOM6_SummerYV <- MOM6plot_function_by_season(
+  "YV_0_180", "Summer (Jul–Sep)", Scaled_season_MOM6YL_datalong,
+  "YV", "value"
+)
+```
+
+```{r}
+
+MOM6_SummerMLD <- MOM6_SummerMLD + labs(x = NULL, y = NULL)
+MOM6_SummerTemp <- MOM6_SummerTemp + labs(x = NULL, y = NULL)
+MOM6_SummerXV <- MOM6_SummerXV + labs(x = NULL, y = NULL)
+MOM6_SummerYV <- MOM6_SummerYV + labs(x = NULL, y = NULL)
+
+
+MOM6_ggarranged_summer <- ggarrange(
+  MOM6_SummerMLD,
+  MOM6_SummerTemp,
+  MOM6_SummerXV,
+  MOM6_SummerYV,
+  ncol = 2,
+  nrow = 2,
+  labels = c("A", "B", "C", "D"),
+  font.label = list(size = 12, face = "bold"),
+  common.legend = TRUE,
+  legend = "bottom"
+)
+
+
+MOM6_ggarranged_summer <- annotate_figure(
+  MOM6_ggarranged_summer,
+  left = text_grob("Value", rot = 90, size = 14, face = "bold"),
+  bottom = text_grob("Year", size = 14, face = "bold")
+)
+
+
+print(MOM6_ggarranged_summer)
+
+```
 
 
 ```{r}
@@ -974,7 +1028,7 @@ Scaled_season_GLORY_monthly.df <- season_GLORY_monthly.df %>%
       TRUE ~ NA_character_
     )
   ) %>%
-  group_by(variable, name, Season) %>%
+  group_by(variable, newname, Season) %>%
   mutate(scaled_value = scale(value) %>% as.vector()) %>%
   mutate(value=scaled_value)%>%
   select(-scaled_value) %>%         # clean up helper column
@@ -1009,13 +1063,13 @@ Scaled_season_GLORY_monthly.df <- Scaled_season_GLORY_monthly.df%>%
 Unscaled_season_GLORY_datalong <- season_GLORY_monthly.df %>%
 
  mutate(
-    source = "MOM6",
+    source = "GLORY",
     scaled = FALSE,
     Season = case_when(
-      month %in% 1:3 ~ "Winter",
-      month %in% 4:6 ~ "Spring",
-      month %in% 7:9 ~ "Summer",
-      month %in% 10:12 ~ "Autumn",
+      month %in% 1:3 ~ "Winter (Jan–Mar)",
+      month %in% 4:6 ~ "Spring (Apr–Jun)",
+      month %in% 7:9 ~ "Summer (Jul–Sep)",
+      month %in% 10:12 ~ "Autumn (Oct–Dec)",
       TRUE ~ NA_character_
     )
   )
@@ -1031,7 +1085,7 @@ GLORY_monthlycombined_models <- bind_rows(
   Scaled_season_GLORY_monthly.df,
   Unscaled_season_GLORY_datalong
 ) %>%
-  group_by(year,name, Season, variable, source, scaled) %>%
+  group_by(year,newname, Season, variable, source, scaled) %>%
   summarise(value = mean(value, na.rm = TRUE), .groups = "drop")
 
 
@@ -1045,8 +1099,8 @@ head(GLORY_monthlycombined_models)
 GLORYplot_function_by_season <- function(variable_name, season_name, dataframe, plot_title, y_axis) {
   
   dataframe %>%
-    filter(name == variable_name, Season == season_name) %>%
-    group_by(year, source, scaled, variable, Season) %>%
+    filter(newname == variable_name, Season == season_name) %>%
+    group_by(year, Season, newname, source) %>%
     summarise(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
     ggplot(aes(x = year, y = value, color = source)) +
     geom_point() + 
@@ -1065,7 +1119,171 @@ GLORYplot_function_by_season <- function(variable_name, season_name, dataframe, 
 
 
 ```{r}
-GLORYplot_function_by_season("lst_90_180","Summer",Scaled_season_GLORY_monthly.df, "Seasonality Distribution of LST","value" )
+GLORYplot_function_by_season("MLD_0_180","Summer (Jul–Sep)",Scaled_season_GLORY_monthly.df, "Seasonality Distribution of MLD","value" )
+```
+
+```{r}
+# Create each summer plot
+GLORY_SummerMLD <- GLORYplot_function_by_season(
+  "MLD_0_180", "Summer (Jul–Sep)", Scaled_season_GLORY_monthly.df,
+  "MLD", "value"
+)
+
+GLORY_SummerTemp <- GLORYplot_function_by_season(
+  "T_0_180", "Summer (Jul–Sep)", Scaled_season_GLORY_monthly.df,
+  "Temp", "value"
+)
+
+GLORY_SummerXV <- GLORYplot_function_by_season(
+  "XV_0_180", "Summer (Jul–Sep)",Scaled_season_GLORY_monthly.df,
+  "XV", "value"
+)
+
+GLORY_SummerYV <- GLORYplot_function_by_season(
+  "YV_0_180", "Summer (Jul–Sep)", Scaled_season_GLORY_monthly.df,
+  "YV", "value"
+)
+```
+
+
+
+
+```{r}
+library(ggpubr)
+
+GLORY_SummerMLD <- GLORY_SummerMLD + labs(x = NULL, y = NULL) 
+GLORY_SummerTemp <- GLORY_SummerTemp + labs(x = NULL, y = NULL)
+GLORY_SummerXV <- GLORY_SummerXV + labs(x = NULL, y = NULL)
+GLORY_SummerYV <- GLORY_SummerYV + labs(x = NULL, y = NULL)
+
+GLORY_ggarranged_summer <- ggarrange(
+  GLORY_SummerMLD,
+  GLORY_SummerTemp,
+  GLORY_SummerXV,
+  GLORY_SummerYV,
+  ncol = 2,
+  nrow = 2,
+  labels = c("A", "B", "C", "D"),
+  font.label = list(size = 12, face = "bold"),
+  common.legend = TRUE,
+  legend = "bottom"
+)
+
+
+GLORY_ggarranged_summer <- annotate_figure(
+  GLORY_ggarranged_summer,
+  left = text_grob("Value", rot = 90, size = 14, face = "bold"),
+  bottom = text_grob("Year", size = 14, face = "bold")
+)
+
+
+print(GLORY_ggarranged_summer)
+
+
+```
+
+```{r}
+
+summer_combined_side_by_side <- ggarrange(
+  GLORY_SummerMLD, MOM6_SummerMLD,
+  GLORY_SummerTemp, MOM6_SummerTemp,
+  GLORY_SummerXV, MOM6_SummerXV,
+  GLORY_SummerYV, MOM6_SummerYV,
+  ncol = 2, nrow = 4,
+  labels = c("A", "B", "C", "D", "E", "F", "G", "H"),
+  font.label = list(size = 12, face = "bold"),
+  common.legend = TRUE,
+  legend = "bottom"
+)
+
+
+summer_combined_side_by_side <- annotate_figure(
+  summer_combined_side_by_side,
+  left = text_grob("Value", rot = 90, size = 14, face = "bold"),
+  bottom = text_grob("Year", size = 14, face = "bold")
+)
+
+print(summer_combined_side_by_side)
+
+```
+```{r}
+Scaled_season_MOM6YL_datalong <- Scaled_season_MOM6YL_datalong %>%
+  rename(
+    newname = variable
+  )
+```
+
+
+
+
+```{r}
+Season_combined.df <- bind_rows(Scaled_season_MOM6YL_datalong, Scaled_season_GLORY_monthly.df )
+
+head(Season_combined.df)
+```
+
+
+```{r}
+GLORYplot_function_by_season("MLD_0_180","Summer (Jul–Sep)",Season_combined.df, "Seasonality Distribution of MLD","value" )
+```
+
+
+
+```{r Summer MLD 0_180 Plots}
+# Create each summer plot
+Combined_SummerMLD <- GLORYplot_function_by_season(
+  "MLD_0_180", "Summer (Jul–Sep)", Season_combined.df,
+  "MLD", "value"
+)
+
+Combined_SummerTemp <- GLORYplot_function_by_season(
+  "T_0_180", "Summer (Jul–Sep)", Season_combined.df,
+  "Temp", "value"
+)
+
+Combined_SummerXV <- GLORYplot_function_by_season(
+  "XV_0_180", "Summer (Jul–Sep)",Season_combined.df,
+  "XV", "value"
+)
+
+Combined_SummerYV <- GLORYplot_function_by_season(
+  "YV_0_180", "Summer (Jul–Sep)", Season_combined.df,
+  "YV", "value"
+)
+```
+
+
+```{r}
+
+# Add axis labels to each Combined plot
+Combined_SummerMLD <- Combined_SummerMLD + labs(x = NULL, y = NULL)
+Combined_SummerTemp <- Combined_SummerTemp + labs(x = NULL, y = NULL)
+Combined_SummerXV <- Combined_SummerXV + labs(x = NULL, y = NULL)
+Combined_SummerYV <- Combined_SummerYV + labs(x = NULL, y = NULL)
+
+# Arrange the plots in a 2x2 grid with labels and shared legend
+GLORY_ggarranged_summer <- ggarrange(
+  Combined_SummerMLD,
+  Combined_SummerTemp,
+  Combined_SummerXV,
+  Combined_SummerYV,
+  ncol = 2,
+  nrow = 2,
+  labels = c("A", "B", "C", "D"),
+  font.label = list(size = 12, face = "bold"),
+  common.legend = TRUE,
+  legend = "bottom"
+)
+
+# Annotate the full figure with axis titles
+GLORY_ggarranged_summer <- annotate_figure(
+  GLORY_ggarranged_summer,
+  left = text_grob("Value", rot = 90, size = 14, face = "bold"),
+  bottom = text_grob("Year", size = 14, face = "bold")
+)
+
+# Display the arranged and annotated plot
+print(GLORY_ggarranged_summer)
 ```
 
 
@@ -1074,7 +1292,7 @@ GLORYplot_function_by_season("lst_90_180","Summer",Scaled_season_GLORY_monthly.d
 GLORYall_seasonal_function <- function(variable_name, dataframe, plot_title, y_axis) {
   
   dataframe %>%
-    filter(name == variable_name) %>%
+    filter(newname == variable_name) %>%
     group_by(year, Season, name) %>%
     summarise(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
     ggplot(aes(x = year, y = value, color = Season)) +
@@ -1094,12 +1312,32 @@ GLORYall_seasonal_function <- function(variable_name, dataframe, plot_title, y_a
 ```
 
 ```{r}
-GLORYall_seasonal_function("lst_90_180", Scaled_season_GLORY_monthly.df, "GLORY Seasonality Distribution of LST","value" )
+GLORYall_seasonal_function("MLD_0_180", Scaled_season_GLORY_monthly.df, "GLORY Seasonality Distribution of MLD","value" )
 ```
 
+```{r All Season Plot Function}
 
-```{r}
-GLORYall_seasonal_function("mld_0_90", Scaled_season_GLORY_monthly.df, "GLORY Seasonality Distribution of MLD","value" )
+MOM6all_seasonal_function2 <- function(variable_name, dataframe, plot_title, y_axis) {
+  
+  dataframe %>%
+    filter(newname == variable_name) %>%
+    group_by(year, Season, newname, scaled, source) %>%
+    summarise(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
+    ggplot(aes(x = year, y = value, color = Season)) +
+    geom_point() +  
+    geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
+    geom_line() + 
+    scale_x_continuous(breaks = seq(min(dataframe$year), max(dataframe$year), by = 5)) +
+    labs(title = plot_title,
+         y = y_axis,
+         x = "Year",
+         color = "Season") +
+    theme_minimal()
+}
+
+
+
+###Take means of each season so it plots mean of each season over each year
 ```
 
 
@@ -1109,11 +1347,11 @@ GLORYall_seasonal_function("mld_0_90", Scaled_season_GLORY_monthly.df, "GLORY Se
 library(patchwork)
 
 
-p1 <- MOM6all_seasonal_function("MLD_90_180", Scaled_season_MOM6YL_datalong, 
+p1 <- MOM6all_seasonal_function2("MLD_0_180", Scaled_season_MOM6YL_datalong, 
                                 "MOM6 Seasonality Distribution of MLD", "value") +
-  theme(legend.position = "none")  # remove legend
+  theme(legend.position = "none")  
 
-p2 <- GLORYall_seasonal_function("mld_0_90", Scaled_season_GLORY_monthly.df, 
+p2 <- GLORYall_seasonal_function("MLD_0_180", Scaled_season_GLORY_monthly.df, 
                                  "GLORY Seasonality Distribution of MLD", "value")
 
 
@@ -1134,8 +1372,25 @@ ggsave(
 
 ```
 
+
+
+
+
+
+
+
 ###GAMS Model
 
+```{r Pull in recruitment data}
+
+Recruitment_Yellow_Tail.df <- read.csv(
+  here("Data","Yellowtail","RecruitmentDeviationsYellowtail2025.csv")
+)
+
+print(Recruitment_Yellow_Tail.df)
+
+
+```
 
 ```{r}
 
@@ -1182,6 +1437,14 @@ print(results_df)
 
 
 
+```{r}
+linear1 <- 4
+linear2 <- 0.6
+quad2<- 5
+intercept <- 1
+error<- rnorm(30, 0.1,0.5)
+#this is just a simple quadratic equation with 2 covraiates plus random error
+```
 
 
 

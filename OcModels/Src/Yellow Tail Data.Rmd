@@ -1559,7 +1559,7 @@ for(i in 1:length(covariatenames)){
 smooth_full<- smooths_gam%>%left_join(LongScaled_CombinedModels_Rec_Yellow_Tail.df)%>%left_join(results_gam)
 
 partial_effects<-ggplot(smooths_gam) +  # Setup the plot with the fitted values
-  facet_grid(~covariate)+
+  facet_wrap(~covariate, ncol=3)+
   geom_line(aes(x = value, y = .estimate, col=Model), lwd=1.25) + # Add estimated smooth
     geom_point(data = LongScaled_CombinedModels_Rec_Yellow_Tail.df%>%rename(covariate=variable), aes(x = value, y = Y_rec, col=source),alpha = 0.2) + # Add your data points
 # Diandre', I couldnt figure out how to do this in one call sot there are
@@ -1567,17 +1567,16 @@ partial_effects<-ggplot(smooths_gam) +  # Setup the plot with the fitted values
 # have to change the model filter!! and potentially the x and y values
   geom_text(
   data    = results_gam%>%filter(Model=="MOM6"),
-  mapping = aes(x = -2, y = 5, label = round(DevianceExp,2), group=covariate),
-  hjust   = -0.1,
-  vjust   = -1, col='#F8766D'
+  mapping = aes(x = -3.5, y =0.7, label = round(DevianceExp,2), group=covariate),
+col='#F8766D'
 )+
     geom_text(
   data    = results_gam%>%filter(Model=="GLORYs"),
-  mapping = aes(x = -2, y = 3, label = round(DevianceExp,2), group=covariate),
-  hjust   = -0.1,
-  vjust   = -1, col='#00BFC4'
+  mapping = aes(x = -3.5, y = 0.4, label = round(DevianceExp,2), group=covariate),
+ col='#00BFC4'
 )+
-annotate("text", x= -1, y = 8,label="Dev Explained")+
+  xlim(c(-4,4))+
+#annotate("text", x= -1, y = 0.8,label="Dev Explained")+
   guides(text="none")+
   theme_bw()
 partial_effects 

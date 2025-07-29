@@ -1452,7 +1452,7 @@ print(results_df)
 ```{r Combiing wide MOM6 data and Recruitment Data}
 
 MOM6_Rec_Yellow_Tail.df <- left_join(
-  Scaled_MOM6_Yellow_Tail.df,
+  Scaled_MOM6YL_datalong,
   Recruitment_Yellow_Tail.df,
   by = "year"
 )
@@ -1466,7 +1466,7 @@ print(MOM6_Rec_Yellow_Tail.df)
 ```{r Combiing wide GLORY data and Recruitment Data}
 
 GLORY_Rec_Yellow_Tail.df <- left_join(
-  Scaled_Filtered_Glory_Yellow_Tail.df,
+  Scaled_GYL_datalong,
   Recruitment_Yellow_Tail.df,
   by = "year"
 )
@@ -1507,7 +1507,7 @@ summary <- summary(gamfit) #this pulls out the summary of the model
 #this pulls out the model preditions and the SEs of the predictions and stores
 #them into a dataframe
 
-predictions <- data.frame(prediction=predict(gamfit, se.fit=TRUE),year=unique(data_full$year))%>%
+predictions <- data.frame(prediction=predict(gamfit, se.fit=TRUE),year=unique(data$year))%>%
   mutate(variable=covariate, source = modelname) 
 
 #pulling out the values we need from the summary and adding to a dataframe
@@ -1532,34 +1532,67 @@ return(output)
 ```
 
 
+```{r}
+Modelnames <- unique(LongScaled_CombinedModels_Rec_Yellow_Tail.df$source) #change this to your dataset
+covariatenames <- unique(LongScaled_CombinedModels_Rec_Yellow_Tail.df$variable) #change this to your dataset
+predictions_gam<- data.frame()
+results_gam<- data.frame()
+smooths_gam<- data.frame()
+
+for(i in 1:length(covariatenames)){
+  for(j in 1:length(Modelnames)){
+    gamout<-gamoutput(Modelnames[j], covariatenames[j], LongScaled_CombinedModels_Rec_Yellow_Tail.df)
+    predictions_gam<-rbind(predictions_gam, gamout[[2]])
+    results_gam<-rbind(results_gam, gamout[[3]])
+    smooths_gam<-rbind(smooths_gam, gamout[[4]])
+  }
+  print(i)
+}
+```
+
 
 ```{r}
-gamM1C1<-gamoutput("MOM6", "Tcop", MOM6_Rec_Yellow_Tail.df)
-gamM2C1<-gamoutput("GLORY", "Tcop", GLORY_Rec_Yellow_Tail.df)
-gamM1C2<-gamoutput("MOM6", "Tcop", GLORY_Rec_Yellow_Tail.df)
-gamM2C2<-gamoutput("GLORY", "Tcop", MOM6_Rec_Yellow_Tail.df)
 
+#change the code here to have your dataset long name, and you will create a 
+#multi panel plot showing the relationships of both models on the plot! We can
+#also add the deviance explained to the plot as well :)
 
-###unique(LongScaled_CombinedModels_Rec_Yellow_Tail.df$Model)
-#now we can pull out each output we want from the list and combine it with the 
-# other runs of the function into a single dataframe
+smooth_full<- smooths_gam%>%left_join(LongScaled_CombinedModels_Rec_Yellow_Tail.df)%>%left_join(results_gam)
 
-predictions_gam<- data.frame(gamM1C1[[2]])%>%
-  bind_rows(data.frame(gamM2C1[[2]]))%>%
-  bind_rows(data.frame(gamM1C2[[2]]))%>%
-  bind_rows(data.frame(gamM2C2[[2]]))
-
-results_gam<- data.frame(gamM1C1[[3]])%>%
-  bind_rows(data.frame(gamM2C1[[3]]))%>%
-  bind_rows(data.frame(gamM1C2[[3]]))%>%
-  bind_rows(data.frame(gamM2C2[[3]]))
-
-smooths_gam<- data.frame(gamM1C1[[4]])%>%
-  bind_rows(data.frame(gamM2C1[[4]]))%>%
-  bind_rows(data.frame(gamM1C2[[4]]))%>%
-  bind_rows(data.frame(gamM2C2[[4]]))
-
+partial_effects<-ggplot(smooths_gam) +  # Setup the plot with the fitted values
+  facet_grid(~covariate)+
+  geom_line(aes(x = value, y = .estimate, col=Model), lwd=1.25) + # Add estimated smooth
+    geom_point(data = LongScaled_CombinedModels_Rec_Yellow_Tail.df%>%rename(covariate=variable), aes(x = value, y = Y_rec, col=source),alpha = 0.2) + # Add your data points
+# Diandre', I couldnt figure out how to do this in one call sot there are
+# multiple geom text calls, which means you will 
+# have to change the model filter!! and potentially the x and y values
+  geom_text(
+  data    = results_gam%>%filter(Model=="MOM6"),
+  mapping = aes(x = -2, y = 5, label = round(DevianceExp,2), group=covariate),
+  hjust   = -0.1,
+  vjust   = -1, col='#F8766D'
+)+
+    geom_text(
+  data    = results_gam%>%filter(Model=="GLORYs"),
+  mapping = aes(x = -2, y = 3, label = round(DevianceExp,2), group=covariate),
+  hjust   = -0.1,
+  vjust   = -1, col='#00BFC4'
+)+
+annotate("text", x= -1, y = 8,label="Dev Explained")+
+  guides(text="none")+
+  theme_bw()
+partial_effects 
 ```
+
+
+
+
+
+
+
+
+
+
 
 
 

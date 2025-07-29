@@ -1089,9 +1089,8 @@ print(Unscaled_season_GLORY_datalong)
 
 GLORY_monthlycombined_models <- bind_rows(
   Scaled_season_GLORY_monthly.df,
-  Unscaled_season_GLORY_datalong
-) %>%
- C,newname, Season, variable, source, scaled) %>%
+  Unscaled_season_GLORY_datalong) %>%
+ #C,newname, Season, variable, source, scaled) %>%
   summarise(value = mean(value, na.rm = TRUE), .groups = "drop")
 
 
@@ -1541,7 +1540,7 @@ smooths_gam<- data.frame()
 
 for(i in 1:length(covariatenames)){
   for(j in 1:length(Modelnames)){
-    gamout<-gamoutput(Modelnames[j], covariatenames[j], LongScaled_CombinedModels_Rec_Yellow_Tail.df)
+    gamout<-gamoutput(Modelnames[j], covariatenames[i], LongScaled_CombinedModels_Rec_Yellow_Tail.df)
     predictions_gam<-rbind(predictions_gam, gamout[[2]])
     results_gam<-rbind(results_gam, gamout[[3]])
     smooths_gam<-rbind(smooths_gam, gamout[[4]])

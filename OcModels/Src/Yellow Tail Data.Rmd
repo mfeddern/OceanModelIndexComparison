@@ -20,6 +20,12 @@ library(patchwork)
 library(standardize)
 library(ggpubr)
 library(gridExtra)
+library(data.table) 
+library(lubridate)
+library(corrplot)
+library(mgcv)
+library(tidync)
+library(gratia)
 ```
 
 ```{r clear environment}
@@ -1085,7 +1091,7 @@ GLORY_monthlycombined_models <- bind_rows(
   Scaled_season_GLORY_monthly.df,
   Unscaled_season_GLORY_datalong
 ) %>%
-  group_by(year,newname, Season, variable, source, scaled) %>%
+ C,newname, Season, variable, source, scaled) %>%
   summarise(value = mean(value, na.rm = TRUE), .groups = "drop")
 
 
@@ -1207,13 +1213,14 @@ print(summer_combined_side_by_side)
 
 ```
 ```{r}
+
+###renaming MOM6 variable column to match GLORY column
+
 Scaled_season_MOM6YL_datalong <- Scaled_season_MOM6YL_datalong %>%
   rename(
     newname = variable
   )
 ```
-
-
 
 
 ```{r}
@@ -1230,7 +1237,8 @@ GLORYplot_function_by_season("MLD_0_180","Summer (Jul–Sep)",Season_combined.df
 
 
 ```{r Summer MLD 0_180 Plots}
-# Create each summer plot
+
+
 Combined_SummerMLD <- GLORYplot_function_by_season(
   "MLD_0_180", "Summer (Jul–Sep)", Season_combined.df,
   "MLD", "value"
@@ -1384,8 +1392,12 @@ ggsave(
 ```{r Pull in recruitment data}
 
 Recruitment_Yellow_Tail.df <- read.csv(
-  here("Data","Yellowtail","RecruitmentDeviationsYellowtail2025.csv")
-)
+  here("Data", "Yellowtail", "RecruitmentDeviationsYellowtail2025.csv")
+) %>%
+  rename(
+    year = Yr,
+    Y_rec = Value
+  )
 
 print(Recruitment_Yellow_Tail.df)
 
@@ -1401,7 +1413,7 @@ Full_MOM6_Yellow_Tail.df <- na.omit(Full_MOM6_Yellow_Tail.df)
 ```
 
 
-```{r}
+```{r Temp Covariance}
 #this tells us the covariance
 cov1<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(Tcop),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tcop))
@@ -1413,8 +1425,8 @@ Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tpart))
 
 ```
 
-```{r}
-#this tells us the covariance
+```{r Temp Correlation}
+#this tells us the Correlation
 cor1<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(Tcop),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tcop))
 
@@ -1437,14 +1449,118 @@ print(results_df)
 
 
 
-```{r}
-linear1 <- 4
-linear2 <- 0.6
-quad2<- 5
-intercept <- 1
-error<- rnorm(30, 0.1,0.5)
-#this is just a simple quadratic equation with 2 covraiates plus random error
+```{r Combiing wide MOM6 data and Recruitment Data}
+
+MOM6_Rec_Yellow_Tail.df <- left_join(
+  Scaled_MOM6_Yellow_Tail.df,
+  Recruitment_Yellow_Tail.df,
+  by = "year"
+)
+
+print(MOM6_Rec_Yellow_Tail.df)
+
+
 ```
+
+
+```{r Combiing wide GLORY data and Recruitment Data}
+
+GLORY_Rec_Yellow_Tail.df <- left_join(
+  Scaled_GYL_datalong,
+  Recruitment_Yellow_Tail.df,
+  by = "year"
+)
+
+print(GLORY_Rec_Yellow_Tail.df)
+
+
+```
+
+
+
+
+```{r}
+LongScaled_CombinedModels_Rec_Yellow_Tail.df <- left_join(
+  Scaled_combined_models,
+  Recruitment_Yellow_Tail.df,
+  by = "year"
+)
+
+print(LongScaled_CombinedModels_Rec_Yellow_Tail.df)
+```
+
+
+
+```{r}
+
+#the function starts here
+gamoutput<-function(modelname, covariate, data){
+  
+#this is the equation of the gam that filters the for a model (GLORYs or MOM6)
+# and filters for a covariate (MLDpjuv, Tcop etc. etc.)
+gamfit<- gam(Y_rec~s(value,k=3), data=data%>%filter(source == modelname, variable==covariate), method = "REML") 
+
+###Do I need to change the name of model name to "Glory" or "MOM6"
+
+summary <- summary(gamfit) #this pulls out the summary of the model
+
+#this pulls out the model preditions and the SEs of the predictions and stores
+#them into a dataframe
+
+predictions <- data.frame(prediction=predict(gamfit, se.fit=TRUE),year=unique(data_full$year))%>%
+  mutate(variable=covariate, source = modelname) 
+
+#pulling out the values we need from the summary and adding to a dataframe
+#that we can easily make a table out of
+results <- data.frame(covariate=covariate, Model = modelname, pvalue = summary$s.table[, "p-value"], DevianceExp = summary$dev.expl, rsq = summary$dev.expl)
+
+#pulling out the shape of the relationship so that we can plot it!
+smooth_data <- smooth_estimates(gamfit)%>%  # Or specify the smooth term you want to plot
+  add_constant(model_constant(gamfit)) %>% # Add the intercept
+  add_confint()%>% # Add the credible interval
+ # pivot_longer(c(covariate),names_to = "Smooth",values_to ="Value")%>%
+  select(-c(.by))%>%
+  mutate(covariate=covariate, Model = modelname)
+
+#putting it together as a list so we can get a single output with all the great 
+#info that we need!
+
+output<-list(summary, predictions, results,smooth_data)
+return(output)
+}
+
+```
+
+
+
+```{r}
+gamM1C1<-gamoutput("Model 1", "covariate1", LongScaled_CombinedModels_Rec_Yellow_Tail.df)
+gamM2C1<-gamoutput("Model 2", "covariate1", LongScaled_CombinedModels_Rec_Yellow_Tail.df)
+gamM1C2<-gamoutput("Model 1", "covariate2", LongScaled_CombinedModels_Rec_Yellow_Tail.df)
+gamM2C2<-gamoutput("Model 2", "covariate2", LongScaled_CombinedModels_Rec_Yellow_Tail.df)
+
+
+unique(LongScaled_CombinedModels_Rec_Yellow_Tail.df$Model)
+#now we can pull out each output we want from the list and combine it with the 
+# other runs of the function into a single dataframe
+
+predictions_gam<- data.frame(gamM1C1[[2]])%>%
+  bind_rows(data.frame(gamM2C1[[2]]))%>%
+  bind_rows(data.frame(gamM1C2[[2]]))%>%
+  bind_rows(data.frame(gamM2C2[[2]]))
+
+results_gam<- data.frame(gamM1C1[[3]])%>%
+  bind_rows(data.frame(gamM2C1[[3]]))%>%
+  bind_rows(data.frame(gamM1C2[[3]]))%>%
+  bind_rows(data.frame(gamM2C2[[3]]))
+
+smooths_gam<- data.frame(gamM1C1[[4]])%>%
+  bind_rows(data.frame(gamM2C1[[4]]))%>%
+  bind_rows(data.frame(gamM1C2[[4]]))%>%
+  bind_rows(data.frame(gamM2C2[[4]]))
+
+```
+
 
 
 

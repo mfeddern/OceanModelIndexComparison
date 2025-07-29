@@ -1466,7 +1466,7 @@ print(MOM6_Rec_Yellow_Tail.df)
 ```{r Combiing wide GLORY data and Recruitment Data}
 
 GLORY_Rec_Yellow_Tail.df <- left_join(
-  Scaled_GYL_datalong,
+  Scaled_Filtered_Glory_Yellow_Tail.df,
   Recruitment_Yellow_Tail.df,
   by = "year"
 )
@@ -1534,13 +1534,13 @@ return(output)
 
 
 ```{r}
-gamM1C1<-gamoutput("Model 1", "covariate1", LongScaled_CombinedModels_Rec_Yellow_Tail.df)
-gamM2C1<-gamoutput("Model 2", "covariate1", LongScaled_CombinedModels_Rec_Yellow_Tail.df)
-gamM1C2<-gamoutput("Model 1", "covariate2", LongScaled_CombinedModels_Rec_Yellow_Tail.df)
-gamM2C2<-gamoutput("Model 2", "covariate2", LongScaled_CombinedModels_Rec_Yellow_Tail.df)
+gamM1C1<-gamoutput("MOM6", "Tcop", MOM6_Rec_Yellow_Tail.df)
+gamM2C1<-gamoutput("GLORY", "Tcop", GLORY_Rec_Yellow_Tail.df)
+gamM1C2<-gamoutput("MOM6", "Tcop", GLORY_Rec_Yellow_Tail.df)
+gamM2C2<-gamoutput("GLORY", "Tcop", MOM6_Rec_Yellow_Tail.df)
 
 
-unique(LongScaled_CombinedModels_Rec_Yellow_Tail.df$Model)
+###unique(LongScaled_CombinedModels_Rec_Yellow_Tail.df$Model)
 #now we can pull out each output we want from the list and combine it with the 
 # other runs of the function into a single dataframe
 

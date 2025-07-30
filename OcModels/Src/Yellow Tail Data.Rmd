@@ -709,6 +709,9 @@ head(yellowtail_MOM6_monthly.df)
 ```
 
 
+
+
+
 ```{r Filtering Years & Seaons}
 
 
@@ -1250,12 +1253,12 @@ Combined_SummerTemp <- GLORYplot_function_by_season(
 
 Combined_SummerXV <- GLORYplot_function_by_season(
   "XV_0_180", "Summer (Jul–Sep)",Season_combined.df,
-  "XV", "value"
+  "CST", "value"
 )
 
 Combined_SummerYV <- GLORYplot_function_by_season(
   "YV_0_180", "Summer (Jul–Sep)", Season_combined.df,
-  "YV", "value"
+  "LST", "value"
 )
 ```
 

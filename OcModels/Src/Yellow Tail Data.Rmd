@@ -26,6 +26,7 @@ library(corrplot)
 library(mgcv)
 library(tidync)
 library(gratia)
+library(gt)
 ```
 
 ```{r clear environment}
@@ -605,21 +606,26 @@ UnScaled_combined_models %>%
 
 
 ```{r  Scaled Temperature Variables}
-
-Scaled_combined_models %>%
+Temp_Scaledplots <- Scaled_combined_models %>%
   filter(variable %in% c("Tcop", "Tpart")) %>%
   ggplot(aes(x = year, y = value, color = source)) +
   geom_point() + 
   geom_line() + 
+  geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
   scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 4)) +
   facet_wrap(~variable, scales = "free_y", ncol = 1, 
              labeller = labeller(variable = c("Tcop" = "Copulation (Tcop)", "Tpart" = "Parturition (Tpart)"))) +
   labs(color = "Ocean Model") +
-  labs(title = "Scaled Comparison of Temperature\nfor Northern Yellowtail: GLORYS vs MOM6") +
+  labs(title = "Temperature\nfor Northern Yellowtail: GLORYS vs MOM6") +
   theme_bw() +
-  theme(strip.text = element_text(size = 12, face = "bold"),
-        strip.background = element_rect(fill = "lightblue", color = "grey"),
-        panel.spacing = unit(1, "lines"))
+   theme(
+    plot.title = element_text(size = 16),
+    strip.text = element_text(size = 14, face = "bold"),
+    strip.background = element_rect(fill = "lightblue", color = "grey"),
+    panel.spacing = unit(1, "lines")
+  )
+
+Temp_Scaledplots
 ```
 
 ```{r UnScaled Temperature Variables}
@@ -635,7 +641,7 @@ UnScaled_combined_models %>%
   labs(color = "Ocean Model") +
   labs(title = "Unscaled Comparison of Temperature\nfor Northern Yellowtail: GLORYS vs MOM6") +
   theme_bw() +
-  theme(strip.text = element_text(size = 12, face = "bold"),
+  theme(strip.text = element_text(size = 16, face = "bold"),
         strip.background = element_rect(fill = "lightblue", color = "grey"),
         panel.spacing = unit(1, "lines"))
 
@@ -660,7 +666,7 @@ MLD_Plots <- Scaled_combined_models %>%
                "MLDpjuv" = "Pelagic Juvenile (MLDpjuv)"
              ))) +
   labs(color = "Ocean Model",
-       title = "Scaled Comparison of Mixed Layer Depth (MLD)\nfor Northern Yellowtail: GLORYS vs MOM6") +
+       title = "Mixed Layer Depth (MLD)\nfor Northern Yellowtail: GLORYS vs MOM6") +
   theme_bw() +  
   theme(
     plot.title = element_text(size = 16),
@@ -672,6 +678,19 @@ MLD_Plots <- Scaled_combined_models %>%
 print(MLD_Plots)
 
 ```
+
+
+
+```{r}
+
+
+MLDTemp_plot <- Temp_Scaledplots + MLD_Plots + 
+  plot_layout(guides = "collect") & 
+  theme(legend.position = "bottom")
+
+print(MLDTemp_plot)
+```
+
 ```{r}
 # Save to PNG
 ggsave("standardized_MLD_grid.png", plot = MLD_Plots, width = 12, height = 10, dpi = 300)
@@ -1297,6 +1316,105 @@ print(GLORY_ggarranged_summer)
 ```
 
 
+
+
+
+```{r All MLD 0_180 Season Plots}
+
+
+Combined_WinterMLD <- GLORYplot_function_by_season(
+  "MLD_0_180", "Winter (Jan–Mar)", Season_combined.df,
+  "MLD", "value"
+)
+
+Combined_SpringMLD <- GLORYplot_function_by_season(
+  "T_0_180", "Spring (Apr–Jun)", Season_combined.df,
+  "MLD", "value"
+)
+
+Combined_SummerMLD <- GLORYplot_function_by_season(
+  "XV_0_180", "Summer (Jul–Sep)",Season_combined.df,
+  "MLD", "value"
+)
+
+Combined_AutumnMLD <- GLORYplot_function_by_season(
+  "YV_0_180", "Autumn (Oct–Dec)", Season_combined.df,
+  "MLD", "value"
+)
+```
+
+
+```{r}
+
+library(ggplot2)
+library(ggpubr)
+
+# Remove x-axis labels and ticks for top two plots
+Combined_WinterMLD <- Combined_WinterMLD + labs(x = NULL, y = NULL) + 
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+
+Combined_SpringMLD <- Combined_SpringMLD + labs(x = NULL, y = NULL) + labs(title = "  MLD - Spring (Apr–Jun)") +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+
+# Remove y-axis labels and ticks for right two plots
+Combined_SpringMLD <- Combined_SpringMLD +
+  theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
+
+Combined_AutumnMLD <- Combined_AutumnMLD + labs(title = "   MLD - Autumn (Oct–Dec)") +
+  theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) 
+
+ALLSeasons_ggarranged_MLD <- ggarrange(
+  Combined_WinterMLD,
+  Combined_SpringMLD,
+  Combined_SummerMLD,
+  Combined_AutumnMLD,
+  ncol = 2,
+  nrow = 2,
+  labels = c("A", "B", "C", "D"),
+  font.label = list(size = 12, face = "bold"),
+  common.legend = TRUE,
+  legend = "bottom"
+)
+
+ALLSeasons_ggarranged_MLD <- annotate_figure(
+  ALLSeasons_ggarranged_MLD,
+  left = text_grob("Standardized Value", rot = 90, size = 14, face = "bold"),
+  bottom = text_grob("Year", size = 14, face = "bold")
+)
+
+print(ALLSeasons_ggarranged_MLD)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ```{r GLORY All Season Plot Function}
 
 GLORYall_seasonal_function <- function(variable_name, dataframe, plot_title, y_axis) {
@@ -1448,6 +1566,104 @@ print(results_df)
 
 
 ```
+
+```{r Covariance}
+
+cov1<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(Tcop),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tcop))
+
+cov2<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(Tpart),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tpart))
+
+cov3<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(MLDpart),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(MLDpart))
+
+cov4<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(MLDlarv),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(MLDlarv))
+
+cov5<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(MLDpjuv),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(MLDpjuv))
+
+cov6<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(LSTlarv),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(LSTlarv))
+
+cov7<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(LSTpjuv),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(LSTpjuv))
+
+cov8<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(CSTlarv),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(CSTlarv))
+
+cov9<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(CSTpjuv),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(CSTpjuv))
+```
+
+
+
+
+```{r Correlation}
+#this tells us the Correlation
+
+cor1<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(Tcop),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tcop))
+
+cor2<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(Tpart),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tpart))
+
+cor3<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(MLDpart),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(MLDpart))
+
+cor4<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(MLDlarv),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(MLDlarv))
+
+cor5<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(MLDpjuv),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(MLDpjuv))
+
+cor6<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(LSTlarv),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(LSTlarv))
+
+cor7<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(LSTpjuv),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(LSTpjuv))
+
+cor8<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(CSTlarv),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(CSTpjuv))
+
+cor9<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(CSTpjuv),
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(CSTpjuv))
+
+
+# Create data frame with named covariates
+results_df2 <- data.frame(
+  covariate = c("Tcop", "Tpart", "MLDpart", "MLDLarv", "MLDpjuv", "LSTlarv", "LSTpjuv", "CSTlarv", "CSTpjuv"),
+  covariance = c(cov1, cov2, cov3, cov4, cov5, cov6, cov7, cov8, cov9),
+  correlation = c(cor1, cor2, cor3, cor4, cor5, cor6, cor7, cor8, cor9)
+)
+
+# Sort the data frame by correlation in descending order
+results_df2 <- results_df2[order(-results_df2$correlation), ]
+
+# Print the sorted data frame
+print(results_df2)
+
+
+```
+
+```{r}
+results_df2 %>%
+  mutate(
+    correlation = round(correlation, 3),
+    covariance = round(covariance, 3)
+  ) %>%
+  gt() %>%
+  tab_header(
+    title = "Correlation Between GLORYs and MOM6 Covariates"
+  ) 
+  
+
+
+```
+
+
+
 
 
 

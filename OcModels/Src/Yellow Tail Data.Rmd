@@ -73,7 +73,7 @@ head(Full_Glory_Yellow_Tail.df)
 
 UnScaled_Filtered_Glory_Yellow_Tail.df <- Full_Glory_Yellow_Tail.df %>%
   mutate(scaled = FALSE)
-
+ 
 head(UnScaled_Filtered_Glory_Yellow_Tail.df)
 
 ```
@@ -298,17 +298,8 @@ my_function("Tcop",Scaled_combined_models,"Scaled Temporal Comparison of Tempera
 
 ```
 ```{r UnScaled Tcop Graphs}
+
 my_function("Tcop",UnScaled_combined_models,"Unscaled Temporal Comparison of Temperature Cues for Co-Population (Tcop)\nin Northern Yellowtail: GLORYS vs MOM6","Temperature (°C)")
-
-
-```
-
-```{r example linear model}
-
-###Waiting for CSV file with the recruitment values
-
-###model = lm(y_rec~ value , data = Scaled_combined_models) #Create the linear regression
-###summary(model)
 
 
 ```
@@ -460,6 +451,7 @@ MLDpart <- make_plot("MLDpart")
 
 
 ```{r}
+
 # Use correct variable names (case-sensitive!)
 vars <- c("LSTpjuv", "LSTlarv", "CSTpjuv", "CSTlarv", 
           "Tpart", "Tcop", "MLDlarv", "MLDpjuv", "MLDpart")
@@ -513,32 +505,54 @@ FacetWrap_function(
 ```
 
 
+```{r Scaled and Unscaled Plot Function}
+
+make_scaled_plot <- function(data, vars, facet_labels, plot_title) {
+  library(ggplot2)
+  library(dplyr)
+  
+  p <- data %>%
+    filter(variable %in% vars) %>%
+    ggplot(aes(x = year, y = value, color = source)) +
+    geom_point() + 
+    geom_line() + 
+    geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
+    scale_x_continuous(
+      breaks = seq(min(data$year), max(data$year), by = 4)
+    ) +
+    facet_wrap(
+      ~variable, scales = "free_y", ncol = 1,
+      labeller = labeller(variable = facet_labels)
+    ) +
+    labs(
+      color = "Ocean Model",
+      title = plot_title
+    ) +
+    theme_bw() +
+    theme(
+      plot.title = element_text(size = 16),
+      strip.text = element_text(size = 14, face = "bold"),
+      strip.background = element_rect(fill = "lightblue", color = "grey"),
+      panel.spacing = unit(1, "lines")
+    )
+  
+  return(p)
+}
+```
+
+
 
 ```{r Scaled CST plots, echo=FALSE, message=FALSE, warning=FALSE}
 
-CST_ScaledPlots <- Scaled_combined_models %>%
-  filter(variable %in% c("CSTlarv", "CSTpjuv")) %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
-  scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 4)) +
-  facet_wrap(~variable, scales = "free_y", ncol = 1, 
-             labeller = labeller(variable = c(
-               "CSTlarv" = "Larval (CSTlarv)",
-               "CSTpjuv" = "Pelagic Juvenile (CSTpjuv)"
-             ))) +
-  labs(
-    color = "Ocean Model",
-    title = "Scaled Comparison of Cross Shelf Transport (CST)\nfor Northern Yellowtail: GLORYS vs MOM6"
-  ) +
-  theme_bw() +  # Apply base theme first
-  theme(
-    plot.title = element_text(size = 16),  # Adjust as needed
-    strip.text = element_text(size = 14, face = "bold"),
-    strip.background = element_rect(fill = "lightblue", color = "grey"),
-    panel.spacing = unit(1, "lines")
-  )
+CST_ScaledPlots <- make_scaled_plot(
+  data = Scaled_combined_models,
+  vars = c("CSTlarv", "CSTpjuv"),
+  facet_labels = c(
+    "CSTlarv" = "Larval (CSTlarv)",
+    "CSTpjuv" = "Pelagic Juvenile (CSTpjuv)"
+  ),
+  plot_title = "Scaled Comparison of Cross Shelf Transport (CST)\nfor Northern Yellowtail: GLORYS vs MOM6"
+)
 
 print(CST_ScaledPlots)
 
@@ -547,20 +561,15 @@ print(CST_ScaledPlots)
 
 ```{r Unscaled CST plots, echo=FALSE, message=FALSE, warning=FALSE}
 
-CST_UnScaledPlots <- UnScaled_combined_models %>%
-  filter(variable %in% c("CSTlarv", "CSTpjuv")) %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-    scale_x_continuous(breaks = seq(min(UnScaled_combined_models$year), max(UnScaled_combined_models$year), by = 4)) +
-  facet_wrap(~variable, scales = "free_y", ncol = 1, 
-             labeller = labeller(variable = c("CSTlarv" = "Larval (CSTlarv)", "CSTpjuv" = "Pelagic Juvenile (CSTpjuv)"))) +
-  labs(color = "Ocean Model") +
-  labs(title = "UnScaled Comparison of Cross Shelf Transport (CST)\nfor Northern Yellowtail: GLORYS vs MOM6") +
-  theme_bw() +
-  theme(strip.text = element_text(size = 12, face = "bold"),
-        strip.background = element_rect(fill = "lightblue", color = "grey"),
-        panel.spacing = unit(1, "lines"))
+CST_UnScaledPlots <- make_scaled_plot(
+  data = UnScaled_combined_models,
+  vars = c("CSTlarv", "CSTpjuv"),
+  facet_labels = c(
+    "CSTlarv" = "Larval (CSTlarv)",
+    "CSTpjuv" = "Pelagic Juvenile (CSTpjuv)"
+  ),
+  plot_title = "UnScaled Comparison of Cross Shelf Transport (CST)\nfor Northern Yellowtail: GLORYS vs MOM6"
+)
 
 print(CST_UnScaledPlots)
 
@@ -569,81 +578,63 @@ print(CST_UnScaledPlots)
 
 ```{r Scaled LST Variables, echo=FALSE, message=FALSE, warning=FALSE}
 
-Scaled_combined_models %>%
-  filter(variable %in% c("LSTlarv", "LSTpjuv")) %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 4)) +
-  facet_wrap(~variable, scales = "free_y", ncol = 1, 
-             labeller = labeller(variable = c("LSTlarv" = "Larval (LSTlarv)", "LSTpjuv" = "Pelagic Juvenile (CSTpjuv)"))) +
-  labs(color = "Ocean Model") +
-  labs(title = "Scaled Comparison of Longshore Transport (LST)\nfor Northern Yellowtail: GLORYS vs MOM6") +
-  theme_bw() +
-  theme(strip.text = element_text(size = 12, face = "bold"),
-        strip.background = element_rect(fill = "lightblue", color = "grey"),
-        panel.spacing = unit(1, "lines"))
+LST_ScaledPlots <- make_scaled_plot(
+  data = Scaled_combined_models,
+  vars = c("LSTlarv", "LSTpjuv"),
+  facet_labels = c(
+    "LSTlarv" = "Larval (LSTlarv)",
+    "LSTpjuv" = "Pelagic Juvenile (LSTpjuv)"
+  ),
+  plot_title = "Scaled Comparison of Long-Shore Transport (LST)\nfor Northern Yellowtail: GLORYS vs MOM6"
+)
+
+print(LST_ScaledPlots)
 ```
 
 
 ```{r Unscaled LST Variables, echo=FALSE, message=FALSE, warning=FALSE}
 
-UnScaled_combined_models %>%
-  filter(variable %in% c("LSTlarv", "LSTpjuv")) %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 4)) +
-  facet_wrap(~variable, scales = "free_y", ncol = 1, 
-             labeller = labeller(variable = c("LSTlarv" = "Larval (LSTlarv)", "LSTpjuv" = "Pelagic Juvenile (CSTpjuv)"))) +
-  labs(color = "Ocean Model") +
-  labs(title = "UnScaled Comparison of Longshore Transport (LST)\nfor Northern Yellowtail: GLORYS vs MOM6") +
-  theme_bw() +
-  theme(strip.text = element_text(size = 12, face = "bold"),
-        strip.background = element_rect(fill = "lightblue", color = "grey"),
-        panel.spacing = unit(1, "lines"))
+LST_UnScaledPlots <- make_scaled_plot(
+  data = UnScaled_combined_models,
+  vars = c("LSTlarv", "LSTpjuv"),
+  facet_labels = c(
+    "LSTlarv" = "Larval (LSTlarv)",
+    "LSTpjuv" = "Pelagic Juvenile (LSTpjuv)"
+  ),
+  plot_title = "UnScaled Comparison of Long-Shore Transport (LST)\nfor Northern Yellowtail: GLORYS vs MOM6"
+)
+
+print(LST_UnScaledPlots)
 ```
 
 
 ```{r  Scaled Temperature Variables}
-Temp_Scaledplots <- Scaled_combined_models %>%
-  filter(variable %in% c("Tcop", "Tpart")) %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
-  scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 4)) +
-  facet_wrap(~variable, scales = "free_y", ncol = 1, 
-             labeller = labeller(variable = c("Tcop" = "Copulation (Tcop)", "Tpart" = "Parturition (Tpart)"))) +
-  labs(color = "Ocean Model") +
-  labs(title = "Temperature\nfor Northern Yellowtail: GLORYS vs MOM6") +
-  theme_bw() +
-   theme(
-    plot.title = element_text(size = 16),
-    strip.text = element_text(size = 14, face = "bold"),
-    strip.background = element_rect(fill = "lightblue", color = "grey"),
-    panel.spacing = unit(1, "lines")
-  )
+Temp_Scaledplots <- make_scaled_plot(
+  data = Scaled_combined_models,
+  vars = c("Tcop", "Tpart"),
+  facet_labels = c(
+    "Tcop" = "Copulation (Tcop)",
+    "Tpart" = "Parturition (Tpart)"
+  ),
+  plot_title = "Scaled Comparison of Temperature (T)\nfor Northern Yellowtail: GLORYS vs MOM6"
+)
 
-Temp_Scaledplots
+print(Temp_Scaledplots)
 ```
 
 ```{r UnScaled Temperature Variables}
 
-UnScaled_combined_models %>%
-  filter(variable %in% c("Tcop", "Tpart")) %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(UnScaled_combined_models$year), max(UnScaled_combined_models$year), by = 4)) +
-  facet_wrap(~variable, scales = "free_y", ncol = 1, 
-             labeller = labeller(variable = c("Tcop" = "Copulation (Tcop)", "Tpart" = "Parturition (Tpart)"))) +
-  labs(color = "Ocean Model") +
-  labs(title = "Unscaled Comparison of Temperature\nfor Northern Yellowtail: GLORYS vs MOM6") +
-  theme_bw() +
-  theme(strip.text = element_text(size = 16, face = "bold"),
-        strip.background = element_rect(fill = "lightblue", color = "grey"),
-        panel.spacing = unit(1, "lines"))
+Temp_UnScaledplots <- make_scaled_plot(
+  data = UnScaled_combined_models,
+  vars = c("Tcop", "Tpart"),
+  facet_labels = c(
+    "Tcop" = "Copulation (Tcop)",
+    "Tpart" = "Parturition (Tpart)"
+  ),
+  plot_title = "UnScaled Comparison of Temperature (T)\nfor Northern Yellowtail: GLORYS vs MOM6"
+)
+
+print(Temp_UnScaledplots)
 
 ```
 
@@ -652,30 +643,18 @@ UnScaled_combined_models %>%
 
 ```{r Scaled MLD plots}
 
-MLD_Plots <- Scaled_combined_models %>%
-  filter(variable %in% c("MLDlarv", "MLDpart", "MLDpjuv")) %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
-  scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 4)) +
-  facet_wrap(~variable, scales = "free_y", ncol = 1, 
-             labeller = labeller(variable = c(
-               "MLDlarv" = "Larval (MLDlarv)", 
-               "MLDpart" = "Parturition (MLDpart)", 
-               "MLDpjuv" = "Pelagic Juvenile (MLDpjuv)"
-             ))) +
-  labs(color = "Ocean Model",
-       title = "Mixed Layer Depth (MLD)\nfor Northern Yellowtail: GLORYS vs MOM6") +
-  theme_bw() +  
-  theme(
-    plot.title = element_text(size = 16),
-    strip.text = element_text(size = 14, face = "bold"),
-    strip.background = element_rect(fill = "lightblue", color = "grey"),
-    panel.spacing = unit(1, "lines")
-  )
+MLD_Scaledplots <- make_scaled_plot(
+  data = Scaled_combined_models,
+  vars = c("MLDlarv", "MLDpart", "MLDpjuv"),
+  facet_labels = c(
+    "MLDlarv" = "Larval (MLDlarv)",
+    "MLDpart" = "Parturition (MLDpart)",
+    "MLDpjuv" = "Pelagic Juvenile MLDpjuv)",
+  ),
+  plot_title = "Scaled Comparison of Mixed Layer Depth\nfor Northern Yellowtail: GLORYS vs MOM6"
+)
 
-print(MLD_Plots)
+print(MLD_Scaledplots)
 
 ```
 
@@ -686,7 +665,7 @@ print(MLD_Plots)
 
 MLDTemp_plot <- Temp_Scaledplots + MLD_Plots + 
   plot_layout(guides = "collect") & 
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom") 
 
 print(MLDTemp_plot)
 ```
@@ -1388,28 +1367,170 @@ print(ALLSeasons_ggarranged_MLD)
 
 
 
+```{r}
+
+make_all_seasons_plot <- function(var_name, data) {
+  library(ggplot2)
+  library(ggpubr)
+  
+  # Map season names to dataset variable codes
+  season_map <- list(
+    Winter = list(code = "T_0_180", title = "Winter (Jan–Mar)"),
+    Spring = list(code = "T_0_180",   title = "Spring (Apr–Jun)"),
+    Summer = list(code = "T_0_180",  title = "Summer (Jul–Sep)"),
+    Autumn = list(code = "T_0_180",  title = "Autumn (Oct–Dec)")
+  )
+  
+  # Helper to create a season plot
+  make_season_plot <- function(code, title) {
+    GLORYplot_function_by_season(code, title, data, var_name, "value")
+  }
+  
+  # Create plots
+  p_winter <- make_season_plot(season_map$Winter$code, season_map$Winter$title) +
+    labs(x = NULL, y = NULL) +
+    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+  
+  p_spring <- make_season_plot(season_map$Spring$code, season_map$Spring$title) +
+    labs(x = NULL, y = NULL, title = paste(var_name, "-", season_map$Spring$title)) +
+    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+          axis.text.y = element_blank(), axis.ticks.y = element_blank())
+  
+  p_summer <- make_season_plot(season_map$Summer$code, season_map$Summer$title)
+  
+  p_autumn <- make_season_plot(season_map$Autumn$code, season_map$Autumn$title) +
+    labs(title = paste(var_name, "-", season_map$Autumn$title)) +
+    theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
+  
+  # Arrange plots
+  arranged <- ggarrange(
+    p_winter, p_spring, p_summer, p_autumn,
+    ncol = 2, nrow = 2,
+    labels = c("A", "B", "C", "D"),
+    font.label = list(size = 12, face = "bold"),
+    common.legend = TRUE,
+    legend = "bottom"
+  )
+  
+  # Annotate figure
+  arranged <- annotate_figure(
+    arranged,
+    left = text_grob("Standardized Value", rot = 90, size = 14, face = "bold"),
+    bottom = text_grob("Year", size = 14, face = "bold")
+  )
+  
+  return(arranged)
+}
+```
 
 
 
 
+```{r}
+# For Temperature
+plot_temp <- make_all_seasons_plot("Temperature", Season_combined.df)
+print(plot_temp)
+```
+
+```{r}
+
+# For Temperature
+season_codes_Temp <- list(
+  Winter = list(code = "T_0_180", title = "Winter (Jan–Mar)"),
+  Spring = list(code = "T_0_180", title = "Spring (Apr–Jun)"),
+  Summer = list(code = "T_0_180", title = "Summer (Jul–Sep)"),
+  Autumn = list(code = "T_0_180", title = "Autumn (Oct–Dec)")
+)
+
+# For Mixed Layer Depth
+season_codes_MLD <- list(
+  Winter = list(code = "MLD_0_180", title = "Winter (Jan–Mar)"),
+  Spring = list(code = "MLD_0_180", title = "Spring (Apr–Jun)"),
+  Summer = list(code = "MLD_0_180", title = "Summer (Jul–Sep)"),
+  Autumn = list(code = "MLD_0_180", title = "Autumn (Oct–Dec)")
+)
+
+# For Cross Shelf Transport
+season_codes_XV <- list(
+  Winter = list(code = "XV_0_180", title = "Winter (Jan–Mar)"),
+  Spring = list(code = "XV_0_180", title = "Spring (Apr–Jun)"),
+  Summer = list(code = "XV_0_180", title = "Summer (Jul–Sep)"),
+  Autumn = list(code = "XV_0_180", title = "Autumn (Oct–Dec)")
+)
+
+# For Long Shore Transport
+season_codes_YV <- list(
+  Winter = list(code = "YV_0_180", title = "Winter (Jan–Mar)"),
+  Spring = list(code = "YV_0_180", title = "Spring (Apr–Jun)"),
+  Summer = list(code = "YV_0_180", title = "Summer (Jul–Sep)"),
+  Autumn = list(code = "YV_0_180", title = "Autumn (Oct–Dec)")
+)
+
+
+```
+
+
+```{r}
+make_all_seasons_plot <- function(var_name, season_codes, data) {
+  library(ggplot2)
+  library(ggpubr)
+  
+  # Helper to make one plot
+  make_season_plot <- function(code, title) {
+    GLORYplot_function_by_season(code, title, data, var_name, "value")
+  }
+  
+  # Create plots with consistent formatting
+  p_winter <- make_season_plot(season_codes$Winter$code, season_codes$Winter$title) +
+    labs(x = NULL, y = NULL) +
+    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+  
+  p_spring <- make_season_plot(season_codes$Spring$code, season_codes$Spring$title) +
+    labs(x = NULL, y = NULL, title = paste(var_name, "-", season_codes$Spring$title)) +
+    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+          axis.text.y = element_blank(), axis.ticks.y = element_blank())
+  
+  p_summer <- make_season_plot(season_codes$Summer$code, season_codes$Summer$title)
+  
+  p_autumn <- make_season_plot(season_codes$Autumn$code, season_codes$Autumn$title) +
+    labs(title = paste(var_name, "-", season_codes$Autumn$title)) +
+    theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
+  
+  # Arrange
+  arranged <- ggarrange(
+    p_winter, p_spring, p_summer, p_autumn,
+    ncol = 2, nrow = 2,
+    labels = c("A", "B", "C", "D"),
+    font.label = list(size = 12, face = "bold"),
+    common.legend = TRUE,
+    legend = "bottom"
+  )
+  
+  # Annotate
+  annotate_figure(
+    arranged,
+    left = text_grob("Standardized Value", rot = 90, size = 14, face = "bold"),
+    bottom = text_grob("Year", size = 14, face = "bold")
+  )
+}
+```
 
 
 
+```{r}
+plot_temp <- make_all_seasons_plot("Temperature", season_codes_Temp, Season_combined.df)
+print(plot_temp)
+```
 
+```{r}
+plot_XV <- make_all_seasons_plot("Cross Shelf Transport", season_codes_XV, Season_combined.df)
+print(plot_XV)
+```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+```{r}
+plot_YV <- make_all_seasons_plot("Long Shore Transport", season_codes_YV, Season_combined.df)
+print(plot_YV)
+```
 
 
 

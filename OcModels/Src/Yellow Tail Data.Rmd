@@ -1,5 +1,5 @@
 ---
-title: "Yellow Tail GLORY vs. MOM6"
+title: "Yellow Tail: GLORY vs. MOM6"
 output: html_notebook
 ---
 
@@ -58,6 +58,9 @@ Full_Glory_Yellow_Tail.df <- na.omit(Full_Glory_Yellow_Tail.df)
 
 
 ```{r Filter out Variables}
+
+### Making it so GLORYs data matches the MOM6 variables 
+
 Full_Glory_Yellow_Tail.df <- Full_Glory_Yellow_Tail.df %>%
   select(year, Tcop, Tpart, MLDpart, MLDlarv, MLDpjuv, CSTlarv, CSTpjuv, LSTlarv, LSTpjuv)%>%
   mutate(source = "GLORY")
@@ -154,8 +157,6 @@ Glory_combined.df %>%
 ```{r Bring in MOM6 Data}
 Full_MOM6_Yellow_Tail.df <- read.csv(
   here("Data", "Yellowtail", "yellowtail_MOM6.csv"))
-
-
 
 head(Full_MOM6_Yellow_Tail.df)
 ```
@@ -413,51 +414,58 @@ ggarrange(
 ```
 
 
-```{r}
+```{r Generate Individual Plots for Each Variable}
 
+### Function to create plots for each variable
 make_plot <- function(var_name) {
+  # Filter the data for the specific variable
   df <- filter(Scaled_combined_models, variable == var_name)
   
+  # Generate the plot
   ggplot(df, aes(x = year, y = value, color = source)) +
-    geom_point() +
-    geom_line() +
-    geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
-    labs(title = var_name, color = "Ocean Model") +
-    scale_x_continuous(breaks = seq(min(df$year), max(df$year), by = 5)) +
-    theme_bw() +
+    geom_point() +  # Add points for each observation
+    geom_line() +   # Connect points with a line
+    geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +  # Add a horizontal reference line at y=0
+    labs(
+      title = var_name,    # Set the plot title as the variable name
+      color = "Ocean Model"  # Label for the color legend
+    ) +
+    scale_x_continuous(
+      breaks = seq(min(df$year), max(df$year), by = 5)  # Set x-axis breaks every 5 years
+    ) +
+    theme_bw() +  # Use a clean black-and-white theme
     theme(
-      panel.spacing = unit(1, "lines"),
-      axis.title.x = element_blank(),
-      axis.title.y = element_blank()
+      panel.spacing = unit(1, "lines"),  # Add spacing between panels if used in facets
+      axis.title.x = element_blank(),    # Remove x-axis title
+      axis.title.y = element_blank()     # Remove y-axis title
     )
 }
 
+# Create individual plots for each variable
+LSTPjuv <- make_plot("LSTpjuv")   # Juvenile LST
+LSTlarv <- make_plot("LSTlarv")   # Larval LST
+CSTpjuv <- make_plot("CSTpjuv")   # Juvenile CST
+CSTlarv <- make_plot("CSTlarv")   # Larval CST
+Tpart <- make_plot("Tpart")       # Particle temperature
+Tcop <- make_plot("Tcop")         # Copepod temperature
+MLDlarv <- make_plot("MLDlarv")   # Larval mixed layer depth
+MLDpjuv <- make_plot("MLDpjuv")   # Juvenile mixed layer depth
+MLDpart <- make_plot("MLDpart")   # Particle mixed layer depth
 
-
-# Create individual plots
-LSTPjuv <- make_plot("LSTpjuv")
-LSTlarv <- make_plot("LSTlarv")
-CSTpjuv <- make_plot("CSTpjuv")
-CSTlarv <- make_plot("CSTlarv")
-Tpart <- make_plot("Tpart")
-Tcop <- make_plot("Tcop")
-MLDlarv <- make_plot("MLDlarv")
-MLDpjuv <- make_plot("MLDpjuv")
-MLDpart <- make_plot("MLDpart")
 
 
 ```
 
 
 
-```{r}
+```{r All variables Facet Wrap Plot}
 
 # Use correct variable names (case-sensitive!)
 vars <- c("LSTpjuv", "LSTlarv", "CSTpjuv", "CSTlarv", 
           "Tpart", "Tcop", "MLDlarv", "MLDpjuv", "MLDpart")
 
 
-# Create styled plot list
+
 plot_list <- lapply(vars, make_plot)
 
 # Arrange plots in 3×3 grid
@@ -493,7 +501,7 @@ ggsave("standardized_comparison_grid.png", plot = all_variables_plot, width = 12
 ```
 
 
-```{r}
+```{r CST Facet Wrap Plots}
 
 FacetWrap_function(
   variable = c("CSTlarv", "CSTpjuv"),
@@ -506,6 +514,12 @@ FacetWrap_function(
 
 
 ```{r Scaled and Unscaled Plot Function}
+
+### Function to create a combined faceted plot for multiple variables
+# This function filters the input data for the specified variables, then generates a faceted ggplot
+# showing each variable over time with points and lines. It adds a horizontal reference line at 0,
+# custom x-axis breaks, and allows custom facet labels and a plot title.
+
 
 make_scaled_plot <- function(data, vars, facet_labels, plot_title) {
   library(ggplot2)
@@ -649,7 +663,7 @@ MLD_Scaledplots <- make_scaled_plot(
   facet_labels = c(
     "MLDlarv" = "Larval (MLDlarv)",
     "MLDpart" = "Parturition (MLDpart)",
-    "MLDpjuv" = "Pelagic Juvenile MLDpjuv)",
+    "MLDpjuv" = "Pelagic Juvenile MLDpjuv)"
   ),
   plot_title = "Scaled Comparison of Mixed Layer Depth\nfor Northern Yellowtail: GLORYS vs MOM6"
 )
@@ -658,41 +672,35 @@ print(MLD_Scaledplots)
 
 ```
 
+```{r UnScaled MLD plots}
+
+MLD_UnScaledplots <- make_scaled_plot(
+  data = UnScaled_combined_models,
+  vars = c("MLDlarv", "MLDpart", "MLDpjuv"),
+  facet_labels = c(
+    "MLDlarv" = "Larval (MLDlarv)",
+    "MLDpart" = "Parturition (MLDpart)",
+    "MLDpjuv" = "Pelagic Juvenile MLDpjuv)"
+  ),
+  plot_title = "UnScaled Comparison of Mixed Layer Depth\nfor Northern Yellowtail: GLORYS vs MOM6"
+)
+
+print(MLD_UnScaledplots)
+
+```
 
 
 ```{r}
 
 
-MLDTemp_plot <- Temp_Scaledplots + MLD_Plots + 
+MLDTemp_plot <- Temp_Scaledplots + MLD_Scaledplots + 
   plot_layout(guides = "collect") & 
   theme(legend.position = "bottom") 
 
 print(MLDTemp_plot)
 ```
 
-```{r}
-# Save to PNG
-ggsave("standardized_MLD_grid.png", plot = MLD_Plots, width = 12, height = 10, dpi = 300)
-```
 
-
-```{r Unscaled MLD variables}
-
-UnScaled_combined_models %>%
-  filter(variable %in% c("MLDlarv", "MLDpart", "MLDpjuv")) %>%
-  ggplot(aes(x = year, y = value, color = source)) +
-  geom_point() + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(min(UnScaled_combined_models$year), max(UnScaled_combined_models$year), by = 4)) +
-  facet_wrap(~variable, scales = "free_y", ncol = 1, 
-             labeller = labeller(variable = c("MLDlarv" = "Larval (MLDlarv)", "MLDpart" = "Parturition (MLDpart)", "MLDpjuv" = "Pelagic Juvenile (MLDpjuv)"))) +
-  labs(color = "Ocean Model") +
-  labs(title = "Unscaled Comparison of Mixed Layer Depth (MLD)\nfor Northern Yellowtail: GLORYS vs MOM6") +
-  theme_bw() +
-  theme(strip.text = element_text(size = 12, face = "bold"),
-        strip.background = element_rect(fill = "lightblue", color = "grey"),
-        panel.spacing = unit(1, "lines"))
-```
 
 
 ###Wrangling Monthly MOM6 Data
@@ -742,7 +750,7 @@ cols_to_pivot <- c("MLD_90_180", "MLD_0_180", "MLD_0_90", "MLD_30_130", "MLD_180
 season_MOM6_monthly.df <- season_MOM6_monthly.df %>%
   mutate(across(all_of(cols_to_pivot), ~ as.numeric(.)))
 
-# Pivot longer safely
+# Pivot longer 
 Unscaled_season_MOM6YL_datalong <- season_MOM6_monthly.df %>%
   pivot_longer(
     cols = all_of(cols_to_pivot),
@@ -886,22 +894,29 @@ MOM6all_seasonal_function <- function(variable_name, dataframe, plot_title, y_ax
 
 MOM6plot_function_by_season <- function(variable_name, season_name, dataframe, plot_title, y_axis) {
   
+  levels <- c("GLORY", "MOM6")  # consistent legend levels
+  
   dataframe %>%
     filter(variable == variable_name, Season == season_name) %>%
+    mutate(source = factor(source, levels = levels)) %>%  # enforce levels
     group_by(year, source, scaled, variable, Season) %>%
     summarise(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
     ggplot(aes(x = year, y = value, color = source)) +
     geom_point() + 
     geom_line() + 
-      geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
+    geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
     scale_x_continuous(breaks = seq(min(dataframe$year), max(dataframe$year), by = 5)) +
+    scale_color_manual(
+  values = c("GLORY" = "red", "MOM6" = "#00BFC4"),
+  limits = c("GLORY", "MOM6"),
+  drop = FALSE
+) +
     labs(title = paste(plot_title, "-", season_name),
          y = y_axis,
          x = "Year",
          color = "Ocean Model") +
     theme_minimal()
 }
-
 
 ```
 
@@ -1104,15 +1119,23 @@ head(GLORY_monthlycombined_models)
 
 GLORYplot_function_by_season <- function(variable_name, season_name, dataframe, plot_title, y_axis) {
   
+  levels <- c("GLORY", "MOM6")  # consistent legend levels
+  
   dataframe %>%
     filter(newname == variable_name, Season == season_name) %>%
+    mutate(source = factor(source, levels = levels)) %>%  # enforce levels
     group_by(year, Season, newname, source) %>%
     summarise(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
     ggplot(aes(x = year, y = value, color = source)) +
     geom_point() + 
     geom_line() + 
-     geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
+    geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
     scale_x_continuous(breaks = seq(min(dataframe$year), max(dataframe$year), by = 5)) +
+   scale_color_manual(
+  values = c("GLORY" = "red", "MOM6" = "#00BFC4"),
+  limits = c("GLORY", "MOM6"),
+  drop = FALSE
+)+
     labs(title = paste(plot_title, "-", season_name),
          y = y_axis,
          x = "Year",
@@ -1620,12 +1643,6 @@ ggsave(
 
 
 ```
-
-
-
-
-
-
 
 
 ###GAMS Model

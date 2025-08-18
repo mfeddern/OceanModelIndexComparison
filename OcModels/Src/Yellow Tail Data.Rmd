@@ -718,7 +718,7 @@ head(yellowtail_MOM6_monthly.df)
 
 
 
-```{r Filtering Years & Seaons}
+```{r MOM6 Filtering Years & Seasons}
 
 
 season_MOM6_monthly.df  <- yellowtail_MOM6_monthly.df  %>%
@@ -930,7 +930,7 @@ MOM6_SummerMLD <- MOM6plot_function_by_season("MLD_0_180","Summer (Jul–Sep)",S
 MOM6_SummerMLD <- MOM6plot_function_by_season(
   "MLD_0_180", "Summer (Jul–Sep)", Scaled_season_MOM6YL_datalong,
   "MLD", "value"
-)
+) 
 
 MOM6_SummerTemp <- MOM6plot_function_by_season(
   "T_0_180", "Summer (Jul–Sep)", Scaled_season_MOM6YL_datalong,
@@ -999,7 +999,7 @@ head(yellowtail_GLORY_monthly.df)
 ```
 
 
-```{r Filtering Years & Seaons}
+```{r GLORY Filtering Years & Seasons}
 
 
 season_GLORY_monthly.df  <- yellowtail_GLORY_monthly.df  %>%
@@ -1587,7 +1587,7 @@ GLORYall_seasonal_function <- function(variable_name, dataframe, plot_title, y_a
 GLORYall_seasonal_function("MLD_0_180", Scaled_season_GLORY_monthly.df, "GLORY Seasonality Distribution of MLD","value" )
 ```
 
-```{r All Season Plot Function}
+```{r MOM6 All Season Plot Function}
 
 MOM6all_seasonal_function2 <- function(variable_name, dataframe, plot_title, y_axis) {
   

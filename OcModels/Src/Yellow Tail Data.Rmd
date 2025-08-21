@@ -381,6 +381,23 @@ labs( color = ("Ocean Model"))
 ```
 
 
+
+
+```{r Facet Wrap UnScaled plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
+
+UnScaled_combined_models %>%
+  ggplot(aes(x = year, y = value, color = source)) +
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 10 )) +
+  facet_wrap(~variable, scales = "free_y")+
+labs( color = ("Ocean Model"))
+
+
+```
+
+
+
 ```{r}
 
 # Get a list of variables
@@ -489,6 +506,82 @@ annotate_figure(
 
 
 print (all_variables_plot)
+```
+
+```{r Generate Individual Plots for Unscaled Each Variable}
+
+### Function to create plots for each variable
+make_plot <- function(var_name) {
+  # Filter the data for the specific variable
+  df <- filter(UnScaled_combined_models, variable == var_name)
+  
+  # Generate the plot
+  ggplot(df, aes(x = year, y = value, color = source)) +
+    geom_point() +  # Add points for each observation
+    geom_line() +   # Connect points with a line
+    labs(
+      title = var_name,    # Set the plot title as the variable name
+      color = "Ocean Model"  # Label for the color legend
+    ) +
+    scale_x_continuous(
+      breaks = seq(min(df$year), max(df$year), by = 5)  # Set x-axis breaks every 5 years
+    ) +
+    theme_bw() +  # Use a clean black-and-white theme
+    theme(
+      panel.spacing = unit(1, "lines"),  # Add spacing between panels if used in facets
+      axis.title.x = element_blank(),    # Remove x-axis title
+      axis.title.y = element_blank()     # Remove y-axis title
+    )
+}
+
+# Create individual plots for each variable
+LSTPjuv <- make_plot("LSTpjuv")   # Juvenile LST
+LSTlarv <- make_plot("LSTlarv")   # Larval LST
+CSTpjuv <- make_plot("CSTpjuv")   # Juvenile CST
+CSTlarv <- make_plot("CSTlarv")   # Larval CST
+Tpart <- make_plot("Tpart")       # Particle temperature
+Tcop <- make_plot("Tcop")         # Copepod temperature
+MLDlarv <- make_plot("MLDlarv")   # Larval mixed layer depth
+MLDpjuv <- make_plot("MLDpjuv")   # Juvenile mixed layer depth
+MLDpart <- make_plot("MLDpart")   # Particle mixed layer depth
+
+
+
+```
+
+
+
+```{r All variables Unscaled Facet Wrap Plot}
+
+# Use correct variable names (case-sensitive!)
+vars <- c("LSTpjuv", "LSTlarv", "CSTpjuv", "CSTlarv", 
+          "Tpart", "Tcop", "MLDlarv", "MLDpjuv", "MLDpart")
+
+
+
+plot_list <- lapply(vars, make_plot)
+
+# Arrange plots in 3×3 grid
+all_UnScaledvariables_plot <- ggarrange(
+  plotlist = plot_list,
+  ncol = 3,
+  nrow = 3,
+  labels = LETTERS[1:length(plot_list)],
+  font.label = list(size = 12, face = "bold"),
+  align = "hv",
+  common.legend = TRUE,
+  legend = "bottom"
+)
+
+# Add single axis labels
+annotate_figure(
+  all_UnScaledvariables_plot,
+  left = text_grob("Standardized values", rot = 90, size = 14),
+  bottom = text_grob("Year", size = 14)
+)
+
+
+print (all_UnScaledvariables_plot)
 ```
 
 
@@ -985,7 +1078,12 @@ print(MOM6_ggarranged_summer)
 ```{r}
 MOM6all_seasonal_function("MLD_90_180",Scaled_season_MOM6YL_datalong, "MOM6 Seasonality Distribution of MLD","value" )
 ```
-
+```{r}
+MOM6all_seasonal_function("MLD_0_180",Scaled_season_MOM6YL_datalong, "MOM6 Seasonality Distribution of MLD","value" )
+```
+```{r}
+MOM6all_seasonal_function("XV_0_180",Scaled_season_MOM6YL_datalong, "MOM6 Seasonality Distribution of MLD","value" )
+```
 
 ###Wrangling Monthly GLORYs Data
 
@@ -1450,8 +1548,13 @@ make_all_seasons_plot <- function(var_name, data) {
 
 
 ```{r}
-# For Temperature
-plot_temp <- make_all_seasons_plot("Temperature", Season_combined.df)
+plot_temp <- make_all_seasons_plot("Temperature", Season_combined.df) +
+  theme(
+    strip.text = element_text(
+      size = 12, 
+      margin = margin(b = 6)   # adds space below the facet labels
+    )
+  )
 print(plot_temp)
 ```
 
@@ -1503,21 +1606,31 @@ make_all_seasons_plot <- function(var_name, season_codes, data) {
     GLORYplot_function_by_season(code, title, data, var_name, "value")
   }
   
+  # Common theme for subplot titles (adds top margin)
+  title_theme <- theme(
+    plot.title = element_text(margin = margin(t = 12))  # adjust spacing as needed
+  )
+  
   # Create plots with consistent formatting
   p_winter <- make_season_plot(season_codes$Winter$code, season_codes$Winter$title) +
-    labs(x = NULL, y = NULL) +
-    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+    labs(x = NULL, y = NULL, title = season_codes$Winter$title) +
+    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+    title_theme
   
   p_spring <- make_season_plot(season_codes$Spring$code, season_codes$Spring$title) +
-    labs(x = NULL, y = NULL, title = paste(var_name, "-", season_codes$Spring$title)) +
+    labs(x = NULL, y = NULL, title = season_codes$Spring$title) +
     theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
-          axis.text.y = element_blank(), axis.ticks.y = element_blank())
+          axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
+    title_theme
   
-  p_summer <- make_season_plot(season_codes$Summer$code, season_codes$Summer$title)
+  p_summer <- make_season_plot(season_codes$Summer$code, season_codes$Summer$title) +
+    labs(title = season_codes$Summer$title) +
+    title_theme
   
   p_autumn <- make_season_plot(season_codes$Autumn$code, season_codes$Autumn$title) +
-    labs(title = paste(var_name, "-", season_codes$Autumn$title)) +
-    theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
+    labs(title = season_codes$Autumn$title) +
+    theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
+    title_theme
   
   # Arrange
   arranged <- ggarrange(
@@ -1529,19 +1642,26 @@ make_all_seasons_plot <- function(var_name, season_codes, data) {
     legend = "bottom"
   )
   
-  # Annotate
+  # Annotate (main labels + overall title)
   annotate_figure(
     arranged,
-    left = text_grob("Standardized Value", rot = 90, size = 14, face = "bold"),
+    top    = text_grob(var_name, face = "bold", size = 16),
+    left   = text_grob("Standardized Value", rot = 90, size = 14, face = "bold"),
     bottom = text_grob("Year", size = 14, face = "bold")
   )
 }
 ```
 
 
+```{r}
+plot_mld <- make_all_seasons_plot("Mixed Layer Depth", season_codes_MLD, Season_combined.df)
+
+print(plot_mld)
+```
 
 ```{r}
-plot_temp <- make_all_seasons_plot("Temperature", season_codes_Temp, Season_combined.df)
+plot_temp <- make_all_seasons_plot("Temperature", season_codes_Temp, Season_combined.df) 
+
 print(plot_temp)
 ```
 

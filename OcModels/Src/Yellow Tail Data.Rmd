@@ -33,16 +33,6 @@ library(gt)
 rm(list = ls())
 ```
 
-```{r}
-system("git clone https://github.com/mfeddern/OceanModelIndexComparison.git")
-```
-```{r}
-setwd("OceanModelIndexComparison")
-system("git pull origin main")  # or replace 'main' with the correct branch
-
-```
-
-
 ###Wrangling GLORY Data
 
 ```{r read in Glory Yellow Tail Data}

@@ -2028,74 +2028,72 @@ for(i in 1:length(covariatenames)){
 
 
 ```{r}
+# add covariate subplot name to smooths_gam and results_gam
+smooths_gam <- smooths_gam %>%
+  mutate(
+    covariate_plot_subtitle = case_when(
+      covariate == "Tcop" ~ "A) Tcop",
+      covariate == "Tpart" ~ "B) Tpart",
+      covariate == "MLDpart" ~ "C) MLDpart",
+      covariate == "CSTlarv" ~ "D) CSTlarv",
+      covariate == "LSTlarv" ~ "E) LSTlarv",
+      covariate == "MLDlarv" ~ "F) MLDlarv",
+      covariate == "CSTpjuv" ~ "G) CSTpjuv",
+      covariate == "LSTpjuv" ~ "H) LSTpjuv",
+      covariate == "MLDpjuv" ~ "I) MLDpjuv"
+    )
+  )
+results_gam <- results_gam %>%
+  mutate(
+    covariate_plot_subtitle = case_when(
+      covariate == "Tcop" ~ "A) Tcop",
+      covariate == "Tpart" ~ "B) Tpart",
+      covariate == "MLDpart" ~ "C) MLDpart",
+      covariate == "CSTlarv" ~ "D) CSTlarv",
+      covariate == "LSTlarv" ~ "E) LSTlarv",
+      covariate == "MLDlarv" ~ "F) MLDlarv",
+      covariate == "CSTpjuv" ~ "G) CSTpjuv",
+      covariate == "LSTpjuv" ~ "H) LSTpjuv",
+      covariate == "MLDpjuv" ~ "I) MLDpjuv"
+    )
+  )
 
-#change the code here to have your dataset long name, and you will create a 
-#multi panel plot showing the relationships of both models on the plot! We can
-#also add the deviance explained to the plot as well :)
-
-smooth_full<- smooths_gam%>%left_join(LongScaled_CombinedModels_Rec_Yellow_Tail.df)%>%left_join(results_gam)
-
-partial_effects<-ggplot(smooths_gam) +  # Setup the plot with the fitted values
-  facet_wrap(~covariate, ncol=3)+
-  geom_line(aes(x = value, y = .estimate, col=Model), lwd=1.25) + # Add estimated smooth
-    geom_point(data = LongScaled_CombinedModels_Rec_Yellow_Tail.df%>%rename(covariate=variable), aes(x = value, y = Y_rec, col=source),alpha = 0.2) + # Add your data points
-# Diandre', I couldnt figure out how to do this in one call sot there are
-# multiple geom text calls, which means you will 
-# have to change the model filter!! and potentially the x and y values
+# plot GAMs
+partial_effects <- ggplot(smooths_gam) +  # Setup the plot with the fitted values
+  facet_wrap(~ covariate_plot_subtitle, ncol = 3) +
+  geom_line(aes(x = value, y = .estimate, col = Model), lwd = 1.25) + # Add estimated smooth
+    geom_point(
+      data = LongScaled_CombinedModels_Rec_Yellow_Tail.df %>%
+        rename(covariate = variable) %>%
+          mutate(
+            covariate_plot_subtitle = case_when(
+              covariate == "Tcop" ~ "A) Tcop",
+              covariate == "Tpart" ~ "B) Tpart",
+              covariate == "MLDpart" ~ "C) MLDpart",
+              covariate == "CSTlarv" ~ "D) CSTlarv",
+              covariate == "LSTlarv" ~ "E) LSTlarv",
+              covariate == "MLDlarv" ~ "F) MLDlarv",
+              covariate == "CSTpjuv" ~ "G) CSTpjuv",
+              covariate == "LSTpjuv" ~ "H) LSTpjuv",
+              covariate == "MLDpjuv" ~ "I) MLDpjuv"
+            )
+          ),
+      aes(x = value, y = Y_rec, col = source),
+      alpha = 0.2
+    ) + # Add your data points
   geom_text(
-  data    = results_gam%>%filter(Model=="MOM6"),
-  mapping = aes(x = -3.5, y =0.7, label = round(DevianceExp,2), group=covariate),
-col='#F8766D'
-)+
-    geom_text(
-  data    = results_gam%>%filter(Model=="GLORYs"),
-  mapping = aes(x = -3.5, y = 0.4, label = round(DevianceExp,2), group=covariate),
- col='#00BFC4'
-)+
+    data    = results_gam %>% filter(Model == "MOM6"),
+    mapping = aes(x = -3.5, y =0.7, label = round(DevianceExp, 2), group = covariate_plot_subtitle),
+    col='#F8766D'
+  ) +
+  geom_text(
+    data    = results_gam %>% filter(Model == "GLORYs"),
+    mapping = aes(x = -3.5, y = 0.4, label = round(DevianceExp, 2), group = covariate_plot_subtitle),
+    col='#00BFC4'
+  ) +
   xlim(c(-4,4))+
-#annotate("text", x= -1, y = 0.8,label="Dev Explained")+
-  guides(text="none")+
+  guides(text = "none") +
   theme_bw()
-partial_effects 
+
+partial_effects
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

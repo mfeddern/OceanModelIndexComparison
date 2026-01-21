@@ -1883,7 +1883,7 @@ cor7<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(LSTpjuv)
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(LSTpjuv))
 
 cor8<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(CSTlarv),
-Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(CSTpjuv))
+Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(CSTlarv))
 
 cor9<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(CSTpjuv),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(CSTpjuv))

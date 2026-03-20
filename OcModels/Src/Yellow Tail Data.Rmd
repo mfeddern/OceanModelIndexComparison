@@ -55,7 +55,7 @@ Full_Glory_Yellow_Tail.df <- na.omit(Full_Glory_Yellow_Tail.df)
 
 Full_Glory_Yellow_Tail.df <- Full_Glory_Yellow_Tail.df %>%
   select(year, Tcop, Tpart, MLDpart, MLDlarv, MLDpjuv, CSTlarv, CSTpjuv, LSTlarv, LSTpjuv)%>%
-  mutate(source = "GLORY")
+  mutate(source = "GLORYS")
 
 head(Full_Glory_Yellow_Tail.df)
   
@@ -102,7 +102,7 @@ UnScaled_GYL_datalong <- UnScaled_Filtered_Glory_Yellow_Tail.df %>%
     names_to = "variable",
     values_to = "value"
   ) %>%
-  mutate(source = "GLORYs")
+  mutate(source = "GLORYS")
 
 print(UnScaled_GYL_datalong)
 
@@ -116,7 +116,7 @@ Scaled_GYL_datalong <- Scaled_Filtered_Glory_Yellow_Tail.df %>%
     names_to = "variable",
     values_to = "value"
   ) %>%
-  mutate(source = "GLORYs")
+  mutate(source = "GLORYS")
 
 print(Scaled_GYL_datalong)
 
@@ -460,20 +460,13 @@ Tcop <- make_plot("Tcop")         # Copepod temperature
 MLDlarv <- make_plot("MLDlarv")   # Larval mixed layer depth
 MLDpjuv <- make_plot("MLDpjuv")   # Juvenile mixed layer depth
 MLDpart <- make_plot("MLDpart")   # Particle mixed layer depth
-
-
-
 ```
-
-
 
 ```{r All variables Facet Wrap Plot}
 
 # Use correct variable names (case-sensitive!)
 vars <- c("LSTpjuv", "LSTlarv", "CSTpjuv", "CSTlarv", 
           "Tpart", "Tcop", "MLDlarv", "MLDpjuv", "MLDpart")
-
-
 
 plot_list <- lapply(vars, make_plot)
 
@@ -496,6 +489,8 @@ annotate_figure(
   bottom = text_grob("Year", size = 14)
 )
 
+# Save to PNG
+ggsave("Figure2.png", plot = all_variables_plot, width = 12, height = 10, dpi = 300)
 
 print (all_variables_plot)
 ```
@@ -536,20 +531,13 @@ Tcop <- make_plot("Tcop")         # Copepod temperature
 MLDlarv <- make_plot("MLDlarv")   # Larval mixed layer depth
 MLDpjuv <- make_plot("MLDpjuv")   # Juvenile mixed layer depth
 MLDpart <- make_plot("MLDpart")   # Particle mixed layer depth
-
-
-
 ```
-
-
 
 ```{r All variables Unscaled Facet Wrap Plot}
 
 # Use correct variable names (case-sensitive!)
 vars <- c("LSTpjuv", "LSTlarv", "CSTpjuv", "CSTlarv", 
           "Tpart", "Tcop", "MLDlarv", "MLDpjuv", "MLDpart")
-
-
 
 plot_list <- lapply(vars, make_plot)
 
@@ -572,19 +560,11 @@ annotate_figure(
   bottom = text_grob("Year", size = 14)
 )
 
+# Save to PNG
+ggsave("Figure3.png", plot = all_UnScaledvariables_plot, width = 12, height = 10, dpi = 300)
 
 print (all_UnScaledvariables_plot)
 ```
-
-
-
-```{r}
-
-# Save to PNG
-ggsave("standardized_comparison_grid.png", plot = all_variables_plot, width = 12, height = 10, dpi = 300)
-
-```
-
 
 ```{r CST Facet Wrap Plots}
 
@@ -974,7 +954,7 @@ MOM6all_seasonal_function <- function(variable_name, dataframe, plot_title, y_ax
 
 MOM6plot_function_by_season <- function(variable_name, season_name, dataframe, plot_title, y_axis) {
   
-  levels <- c("GLORY", "MOM6")  # consistent legend levels
+  levels <- c("GLORYS", "MOM6")  # consistent legend levels
   
   dataframe %>%
     filter(variable == variable_name, Season == season_name) %>%
@@ -987,8 +967,8 @@ MOM6plot_function_by_season <- function(variable_name, season_name, dataframe, p
     geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
     scale_x_continuous(breaks = seq(min(dataframe$year), max(dataframe$year), by = 5)) +
     scale_color_manual(
-  values = c("GLORY" = "red", "MOM6" = "#00BFC4"),
-  limits = c("GLORY", "MOM6"),
+  values = c("GLORYS" = "red", "MOM6" = "#00BFC4"),
+  limits = c("GLORYS", "MOM6"),
   drop = FALSE
 ) +
     labs(title = paste(plot_title, "-", season_name),
@@ -1121,7 +1101,7 @@ Scaled_season_GLORY_monthly.df <- season_GLORY_monthly.df %>%
   group_by(variable, name) %>%
   ungroup() %>%
   mutate(       # overwrite value with scaled version
-    source = "GLORY",
+    source = "GLORYS",
     scaled = TRUE,
     Season = case_when(
       month %in% 1:3 ~ "Winter",
@@ -1166,7 +1146,7 @@ Scaled_season_GLORY_monthly.df <- Scaled_season_GLORY_monthly.df%>%
 Unscaled_season_GLORY_datalong <- season_GLORY_monthly.df %>%
 
  mutate(
-    source = "GLORY",
+    source = "GLORYS",
     scaled = FALSE,
     Season = case_when(
       month %in% 1:3 ~ "Winter (Jan–Mar)",
@@ -1200,7 +1180,7 @@ head(GLORY_monthlycombined_models)
 
 GLORYplot_function_by_season <- function(variable_name, season_name, dataframe, plot_title, y_axis) {
   
-  levels <- c("GLORY", "MOM6")  # consistent legend levels
+  levels <- c("GLORYS", "MOM6")  # consistent legend levels
   
   dataframe %>%
     filter(newname == variable_name, Season == season_name) %>%
@@ -1213,8 +1193,8 @@ GLORYplot_function_by_season <- function(variable_name, season_name, dataframe, 
     geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +
     scale_x_continuous(breaks = seq(min(dataframe$year), max(dataframe$year), by = 5)) +
    scale_color_manual(
-  values = c("GLORY" = "red", "MOM6" = "#00BFC4"),
-  limits = c("GLORY", "MOM6"),
+  values = c("GLORYS" = "red", "MOM6" = "#00BFC4"),
+  limits = c("GLORYS", "MOM6"),
   drop = FALSE
 )+
     labs(title = paste(plot_title, "-", season_name),
@@ -1629,24 +1609,26 @@ make_all_seasons_plot <- function(var_name, season_codes, data) {
 
 
 ```{r}
-plot_mld <- make_all_seasons_plot("Mixed Layer Depth", season_codes_MLD, Season_combined.df)
-
+plot_mld <- make_all_seasons_plot("Mixed layer depth", season_codes_MLD, Season_combined.df)
+ggsave(filename = "Figure7.png", plot = plot_mld, width = 8, height = 5, dpi = 300)
 print(plot_mld)
 ```
 
 ```{r}
 plot_temp <- make_all_seasons_plot("Temperature", season_codes_Temp, Season_combined.df) 
-
+ggsave(filename = "Figure4.png", plot = plot_temp, width = 8, height = 5, dpi = 300)
 print(plot_temp)
 ```
 
 ```{r}
-plot_XV <- make_all_seasons_plot("Cross Shelf Transport", season_codes_XV, Season_combined.df)
+plot_XV <- make_all_seasons_plot("Cross-shelf transport", season_codes_XV, Season_combined.df)
+ggsave(filename = "Figure5.png", plot = plot_XV, width = 8, height = 5, dpi = 300)
 print(plot_XV)
 ```
 
 ```{r}
-plot_YV <- make_all_seasons_plot("Long Shore Transport", season_codes_YV, Season_combined.df)
+plot_YV <- make_all_seasons_plot("Longshore transport", season_codes_YV, Season_combined.df)
+ggsave(filename = "Figure6.png", plot = plot_YV, width = 8, height = 5, dpi = 300)
 print(plot_YV)
 ```
 
@@ -1764,24 +1746,24 @@ Full_MOM6_Yellow_Tail.df <- na.omit(Full_MOM6_Yellow_Tail.df)
 
 ```{r Temp Covariance}
 #this tells us the covariance
-cov1<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(Tcop),
+cov1<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(Tcop),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tcop))
 
 
 
-cov2<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(Tpart),
+cov2<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(Tpart),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tpart))
 
 ```
 
 ```{r Temp Correlation}
 #this tells us the Correlation
-cor1<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(Tcop),
+cor1<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(Tcop),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tcop))
 
 
 
-cor2<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(Tpart),
+cor2<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(Tpart),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tpart))
 
 # Create data frame with named covariates
@@ -1798,31 +1780,31 @@ print(results_df)
 
 ```{r Covariance}
 
-cov1<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(Tcop),
+cov1<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(Tcop),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tcop))
 
-cov2<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(Tpart),
+cov2<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(Tpart),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tpart))
 
-cov3<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(MLDpart),
+cov3<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(MLDpart),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(MLDpart))
 
-cov4<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(MLDlarv),
+cov4<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(MLDlarv),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(MLDlarv))
 
-cov5<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(MLDpjuv),
+cov5<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(MLDpjuv),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(MLDpjuv))
 
-cov6<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(LSTlarv),
+cov6<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(LSTlarv),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(LSTlarv))
 
-cov7<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(LSTpjuv),
+cov7<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(LSTpjuv),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(LSTpjuv))
 
-cov8<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(CSTlarv),
+cov8<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(CSTlarv),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(CSTlarv))
 
-cov9<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(CSTpjuv),
+cov9<- cov(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(CSTpjuv),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(CSTpjuv))
 ```
 
@@ -1832,31 +1814,31 @@ Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(CSTpjuv))
 ```{r Correlation}
 #this tells us the Correlation
 
-cor1<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(Tcop),
+cor1<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(Tcop),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tcop))
 
-cor2<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(Tpart),
+cor2<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(Tpart),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(Tpart))
 
-cor3<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(MLDpart),
+cor3<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(MLDpart),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(MLDpart))
 
-cor4<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(MLDlarv),
+cor4<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(MLDlarv),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(MLDlarv))
 
-cor5<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(MLDpjuv),
+cor5<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(MLDpjuv),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(MLDpjuv))
 
-cor6<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(LSTlarv),
+cor6<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(LSTlarv),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(LSTlarv))
 
-cor7<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(LSTpjuv),
+cor7<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(LSTpjuv),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(LSTpjuv))
 
-cor8<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(CSTlarv),
+cor8<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(CSTlarv),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(CSTlarv))
 
-cor9<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORY")%>%select(CSTpjuv),
+cor9<- cor(Full_Glory_Yellow_Tail.df%>%filter(source=="GLORYS")%>%select(CSTpjuv),
 Full_MOM6_Yellow_Tail.df%>%filter(source=="MOM6")%>%select(CSTpjuv))
 
 
@@ -1884,7 +1866,7 @@ results_df2 %>%
   ) %>%
   gt() %>%
   tab_header(
-    title = "Correlation Between GLORYs and MOM6 Covariates"
+    title = "Correlation Between GLORYS and MOM6 Covariates"
   ) 
   
 
@@ -1947,7 +1929,7 @@ gamoutput<-function(modelname, covariate, data){
 # and filters for a covariate (MLDpjuv, Tcop etc. etc.)
 gamfit<- gam(Y_rec~s(value,k=3), data=data%>%filter(source == modelname, variable==covariate), method = "REML") 
 
-###Do I need to change the name of model name to "Glory" or "MOM6"
+###Do I need to change the name of model name to "GLORYS" or "MOM6"
 
 summary <- summary(gamfit) #this pulls out the summary of the model
 
@@ -2058,7 +2040,7 @@ partial_effects <- ggplot(smooths_gam) +  # Setup the plot with the fitted value
     col='#F8766D'
   ) +
   geom_text(
-    data    = results_gam %>% filter(Model == "GLORYs"),
+    data    = results_gam %>% filter(Model == "GLORYS"),
     mapping = aes(x = -3.5, y = 0.4, label = round(DevianceExp, 2), group = covariate_plot_subtitle),
     col='#00BFC4'
   ) +
@@ -2066,5 +2048,6 @@ partial_effects <- ggplot(smooths_gam) +  # Setup the plot with the fitted value
   guides(text = "none") +
   theme_bw()
 
+ggsave(filename = "Figure8.png", plot = partial_effects, width = 8, height = 6, dpi = 300)
 partial_effects
 ```

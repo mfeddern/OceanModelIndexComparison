@@ -1642,32 +1642,96 @@ make_all_seasons_plot <- function(var_name, season_codes, data) {
 ```
 
 
+
 ```{r}
 plot_mld <- make_all_seasons_plot("Mixed layer depth", season_codes_MLD, Season_combined.df)
-ggsave(filename = "Figure7.png", plot = plot_mld, width = 8, height = 5, dpi = 300)
 print(plot_mld)
 ```
 
 ```{r}
 plot_temp <- make_all_seasons_plot("Temperature", season_codes_Temp, Season_combined.df) 
-ggsave(filename = "Figure4.png", plot = plot_temp, width = 8, height = 5, dpi = 300)
 print(plot_temp)
 ```
 
 ```{r}
 plot_XV <- make_all_seasons_plot("Cross-shelf transport", season_codes_XV, Season_combined.df)
-ggsave(filename = "Figure5.png", plot = plot_XV, width = 8, height = 5, dpi = 300)
 print(plot_XV)
 ```
 
 ```{r}
 plot_YV <- make_all_seasons_plot("Longshore transport", season_codes_YV, Season_combined.df)
-ggsave(filename = "Figure6.png", plot = plot_YV, width = 8, height = 5, dpi = 300)
 print(plot_YV)
 ```
 
+```{r}
+# function for facet wrap version (rather than ggarrange) of seasonal plot
+facet_version_season_plot <- function(season_df, var_df_name, var_plot_name) {
+  season_df |>
+  filter(newname == var_df_name) |>
+  group_by(year, Season, source) |>
+  summarize(mean_value = mean(value)) |>
+  mutate(
+    season_plot_subtitle = case_when(
+      Season == "Winter (Jan–Mar)" ~ "A) Winter (Jan-Mar)",
+      Season == "Spring (Apr–Jun)" ~ "B) Spring (Apr-Jun)",
+      Season == "Summer (Jul–Sep)" ~ "C) Summer (Jul-Sep)",
+      Season == "Autumn (Oct–Dec)" ~ "D) Autumn (Oct-Dec)"
+    )
+  ) |>
+  ggplot(aes(x = year, y = mean_value, color = source)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.8) +
+  facet_wrap(. ~ season_plot_subtitle) +
+  theme_minimal() +
+  labs(title = var_plot_name, y = "Standardized value", x = "Year", color = "Model") +
+  theme(legend.position = "bottom")
+}
+```
 
+```{r}
+# MLD seasonal plot
+facet_t_seasonal <- facet_version_season_plot(
+  season_df = Season_combined.df, 
+  var_df_name = "T_0_180",
+  var_plot_name = "Temperature"
+)
+ggsave(filename = "Figure4.png", plot = facet_t_seasonal, width = 7, height = 5, dpi = 300)
+facet_t_seasonal
+```
 
+```{r}
+# MLD seasonal plot
+facet_xv_seasonal <- facet_version_season_plot(
+  season_df = Season_combined.df, 
+  var_df_name = "XV_0_180",
+  var_plot_name = "Cross-shelf transport"
+)
+ggsave(filename = "Figure5.png", plot = facet_xv_seasonal, width = 7, height = 5, dpi = 300)
+facet_xv_seasonal
+```
+
+```{r}
+# MLD seasonal plot
+facet_yv_seasonal <- facet_version_season_plot(
+  season_df = Season_combined.df, 
+  var_df_name = "YV_0_180",
+  var_plot_name = "Longshore transport"
+)
+ggsave(filename = "Figure6.png", plot = facet_yv_seasonal, width = 7, height = 5, dpi = 300)
+facet_yv_seasonal
+```
+
+```{r}
+# MLD seasonal plot
+facet_mld_seasonal <- facet_version_season_plot(
+  season_df = Season_combined.df, 
+  var_df_name = "MLD_0_180",
+  var_plot_name = "Mixed layer depth"
+)
+ggsave(filename = "Figure7.png", plot = facet_mld_seasonal, width = 7, height = 5, dpi = 300)
+facet_mld_seasonal
+```
 
 
 ```{r GLORY All Season Plot Function}

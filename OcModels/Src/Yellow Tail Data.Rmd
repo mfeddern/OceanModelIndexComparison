@@ -362,12 +362,30 @@ FacetWrap_function(
 ```{r Facet Wrap Scaled plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
 
 Scaled_combined_models %>%
+  mutate(
+    variable_plot_subtitle = case_when(
+      variable == "Tcop" ~ "A) Tcop",
+      variable == "Tpart" ~ "B) Tpart",
+      variable == "MLDpart" ~ "C) MLDpart",
+      variable == "CSTlarv" ~ "D) CSTlarv",
+      variable == "LSTlarv" ~ "E) LSTlarv",
+      variable == "MLDlarv" ~ "F) MLDlarv",
+      variable == "CSTpjuv" ~ "G) CSTpjuv",
+      variable == "LSTpjuv" ~ "H) LSTpjuv",
+      variable == "MLDpjuv" ~ "I) MLDpjuv"
+    )
+  ) %>%
   ggplot(aes(x = year, y = value, color = source)) +
   geom_point() + 
   geom_line() + 
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.8) +
   scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 10 )) +
-  facet_wrap(~variable, scales = "free_y")+
-labs( color = ("Ocean Model"))
+  facet_wrap(~variable_plot_subtitle) +
+  labs(color = ("Ocean Model")) +
+  xlab("Year") +
+  ylab("Standardized value") +
+  theme_bw() +
+  theme(legend.position = "bottom")
 
 
 ```
@@ -378,13 +396,29 @@ labs( color = ("Ocean Model"))
 ```{r Facet Wrap UnScaled plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
 
 UnScaled_combined_models %>%
+  mutate(
+    variable_plot_subtitle = case_when(
+      variable == "Tcop" ~ "A) Tcop",
+      variable == "Tpart" ~ "B) Tpart",
+      variable == "MLDpart" ~ "C) MLDpart",
+      variable == "CSTlarv" ~ "D) CSTlarv",
+      variable == "LSTlarv" ~ "E) LSTlarv",
+      variable == "MLDlarv" ~ "F) MLDlarv",
+      variable == "CSTpjuv" ~ "G) CSTpjuv",
+      variable == "LSTpjuv" ~ "H) LSTpjuv",
+      variable == "MLDpjuv" ~ "I) MLDpjuv"
+    )
+  ) %>%
   ggplot(aes(x = year, y = value, color = source)) +
   geom_point() + 
   geom_line() + 
   scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 10 )) +
-  facet_wrap(~variable, scales = "free_y")+
-labs( color = ("Ocean Model"))
-
+  facet_wrap(~variable_plot_subtitle, scales = "free_y") +
+  labs(color = ("Ocean Model")) +
+  xlab("Year") +
+  ylab("Unstandardized value") +
+  theme_bw() +
+  theme(legend.position = "bottom")
 
 ```
 

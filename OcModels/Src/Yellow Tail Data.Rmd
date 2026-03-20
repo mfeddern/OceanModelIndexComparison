@@ -361,7 +361,7 @@ FacetWrap_function(
 
 ```{r Facet Wrap Scaled plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
 
-Scaled_combined_models %>%
+facet_version_annual_plot_scaled <- Scaled_combined_models %>%
   mutate(
     variable_plot_subtitle = case_when(
       variable == "Tcop" ~ "A) Tcop",
@@ -384,10 +384,14 @@ Scaled_combined_models %>%
   labs(color = ("Ocean Model")) +
   xlab("Year") +
   ylab("Standardized value") +
-  theme_bw() +
+  theme_minimal() +
   theme(legend.position = "bottom")
 
+# Save to PNG
+ggsave("Figure2.png", plot = facet_version_annual_plot_scaled, width = 12, height = 10, dpi = 300)
 
+# view result
+facet_version_annual_plot_scaled
 ```
 
 
@@ -395,7 +399,7 @@ Scaled_combined_models %>%
 
 ```{r Facet Wrap UnScaled plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
 
-UnScaled_combined_models %>%
+facet_version_annual_plot_unscaled <- UnScaled_combined_models %>%
   mutate(
     variable_plot_subtitle = case_when(
       variable == "Tcop" ~ "A) Tcop",
@@ -417,9 +421,14 @@ UnScaled_combined_models %>%
   labs(color = ("Ocean Model")) +
   xlab("Year") +
   ylab("Unstandardized value") +
-  theme_bw() +
+  theme_minimal() +
   theme(legend.position = "bottom")
 
+# Save to PNG
+ggsave("Figure3.png", plot = facet_version_annual_plot_unscaled, width = 12, height = 10, dpi = 300)
+
+# view result
+facet_version_annual_plot_unscaled
 ```
 
 
@@ -523,9 +532,6 @@ annotate_figure(
   bottom = text_grob("Year", size = 14)
 )
 
-# Save to PNG
-ggsave("Figure2.png", plot = all_variables_plot, width = 12, height = 10, dpi = 300)
-
 print (all_variables_plot)
 ```
 
@@ -593,9 +599,6 @@ annotate_figure(
   left = text_grob("Standardized values", rot = 90, size = 14),
   bottom = text_grob("Year", size = 14)
 )
-
-# Save to PNG
-ggsave("Figure3.png", plot = all_UnScaledvariables_plot, width = 12, height = 10, dpi = 300)
 
 print (all_UnScaledvariables_plot)
 ```
@@ -2144,7 +2147,7 @@ partial_effects <- ggplot(smooths_gam) +  # Setup the plot with the fitted value
   ) +
   xlim(c(-4,4))+
   guides(text = "none") +
-  theme_bw()
+  theme_minimal()
 
 ggsave(filename = "Figure8.png", plot = partial_effects, width = 8, height = 6, dpi = 300)
 partial_effects

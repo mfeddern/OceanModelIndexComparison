@@ -27,6 +27,8 @@ library(mgcv)
 library(tidync)
 library(gratia)
 library(gt)
+library(scales)
+library(tidyr)
 ```
 
 ```{r clear environment}
@@ -605,8 +607,6 @@ FacetWrap_function(
 
 
 make_scaled_plot <- function(data, vars, facet_labels, plot_title) {
-  library(ggplot2)
-  library(dplyr)
   
   p <- data %>%
     filter(variable %in% vars) %>%
@@ -877,9 +877,6 @@ apply(Scaled_season_MOM6_monthly.df, 2, mean)
 
 ```{r Make Monthly Scaled MOM6 data long}
 
-library(scales)  
-
-
 cols_to_scale <- c("MLD_90_180", "MLD_0_180", "MLD_0_90", "MLD_30_130", "MLD_180_550", 
                    "T_90_180", "T_0_180", "T_0_90", "T_30_130", "T_180_550", 
                    "XV_90_180", "XV_0_180", "XV_0_90", "XV_30_130", "XV_180_550", 
@@ -1120,10 +1117,6 @@ season_GLORY_monthly.df <- season_GLORY_monthly.df %>%
 
 ```{r Scaling Monthly GLORY Data}
 
-
-library(dplyr)
-library(tidyr)
-
 Scaled_season_GLORY_monthly.df <- season_GLORY_monthly.df %>%
   group_by(variable, name) %>%
   ungroup() %>%
@@ -1266,7 +1259,6 @@ GLORY_SummerYV <- GLORYplot_function_by_season(
 
 
 ```{r}
-library(ggpubr)
 
 GLORY_SummerMLD <- GLORY_SummerMLD + labs(x = NULL, y = NULL) 
 GLORY_SummerTemp <- GLORY_SummerTemp + labs(x = NULL, y = NULL)
@@ -1436,9 +1428,6 @@ Combined_AutumnMLD <- GLORYplot_function_by_season(
 
 ```{r}
 
-library(ggplot2)
-library(ggpubr)
-
 # Remove x-axis labels and ticks for top two plots
 Combined_WinterMLD <- Combined_WinterMLD + labs(x = NULL, y = NULL) + 
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
@@ -1481,9 +1470,7 @@ print(ALLSeasons_ggarranged_MLD)
 ```{r}
 
 make_all_seasons_plot <- function(var_name, data) {
-  library(ggplot2)
-  library(ggpubr)
-  
+
   # Map season names to dataset variable codes
   season_map <- list(
     Winter = list(code = "T_0_180", title = "Winter (Jan–Mar)"),
@@ -1588,8 +1575,6 @@ season_codes_YV <- list(
 
 ```{r}
 make_all_seasons_plot <- function(var_name, season_codes, data) {
-  library(ggplot2)
-  library(ggpubr)
   
   # Helper to make one plot
   make_season_plot <- function(code, title) {
@@ -1724,10 +1709,6 @@ MOM6all_seasonal_function2 <- function(variable_name, dataframe, plot_title, y_a
 
 
 ```{r}
-
-
-library(patchwork)
-
 
 p1 <- MOM6all_seasonal_function2("MLD_0_180", Scaled_season_MOM6YL_datalong, 
                                 "MOM6 Seasonality Distribution of MLD", "value") +

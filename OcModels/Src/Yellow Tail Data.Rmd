@@ -387,8 +387,8 @@ facet_version_annual_plot_scaled <- Scaled_combined_models %>%
   theme_minimal() +
   theme(legend.position = "bottom")
 
-# Save to PNG
-ggsave("Figure2.png", plot = facet_version_annual_plot_scaled, width = 12, height = 10, dpi = 300)
+ggsave("Figure2.png", plot = facet_version_annual_plot_scaled, width = 9, height = 7.5, dpi = 300)
+ggsave("Figure2.pdf", plot = facet_version_annual_plot_scaled, width = 9, height = 7.5, dpi = 300)
 
 # view result
 facet_version_annual_plot_scaled
@@ -424,8 +424,8 @@ facet_version_annual_plot_unscaled <- UnScaled_combined_models %>%
   theme_minimal() +
   theme(legend.position = "bottom")
 
-# Save to PNG
-ggsave("Figure3.png", plot = facet_version_annual_plot_unscaled, width = 12, height = 10, dpi = 300)
+ggsave("Figure3.png", plot = facet_version_annual_plot_unscaled, width = 9, height = 7.5, dpi = 300)
+ggsave("Figure3.pdf", plot = facet_version_annual_plot_unscaled, width = 9, height = 7.5, dpi = 300)
 
 # view result
 facet_version_annual_plot_unscaled
@@ -1700,6 +1700,7 @@ facet_t_seasonal <- facet_version_season_plot(
   var_plot_name = "Temperature"
 )
 ggsave(filename = "Figure4.png", plot = facet_t_seasonal, width = 7, height = 5, dpi = 300)
+ggsave(filename = "Figure4.pdf", plot = facet_t_seasonal, width = 7, height = 5, dpi = 300)
 facet_t_seasonal
 ```
 
@@ -1711,6 +1712,7 @@ facet_xv_seasonal <- facet_version_season_plot(
   var_plot_name = "Cross-shelf transport"
 )
 ggsave(filename = "Figure5.png", plot = facet_xv_seasonal, width = 7, height = 5, dpi = 300)
+ggsave(filename = "Figure5.pdf", plot = facet_xv_seasonal, width = 7, height = 5, dpi = 300)
 facet_xv_seasonal
 ```
 
@@ -1722,6 +1724,7 @@ facet_yv_seasonal <- facet_version_season_plot(
   var_plot_name = "Longshore transport"
 )
 ggsave(filename = "Figure6.png", plot = facet_yv_seasonal, width = 7, height = 5, dpi = 300)
+ggsave(filename = "Figure6.pdf", plot = facet_yv_seasonal, width = 7, height = 5, dpi = 300)
 facet_yv_seasonal
 ```
 
@@ -1733,6 +1736,7 @@ facet_mld_seasonal <- facet_version_season_plot(
   var_plot_name = "Mixed layer depth"
 )
 ggsave(filename = "Figure7.png", plot = facet_mld_seasonal, width = 7, height = 5, dpi = 300)
+ggsave(filename = "Figure7.pdf", plot = facet_mld_seasonal, width = 7, height = 5, dpi = 300)
 facet_mld_seasonal
 ```
 
@@ -2150,5 +2154,6 @@ partial_effects <- ggplot(smooths_gam) +  # Setup the plot with the fitted value
   theme_minimal()
 
 ggsave(filename = "Figure8.png", plot = partial_effects, width = 8, height = 6, dpi = 300)
+ggsave(filename = "Figure8.pdf", plot = partial_effects, width = 8, height = 6, dpi = 300)
 partial_effects
 ```

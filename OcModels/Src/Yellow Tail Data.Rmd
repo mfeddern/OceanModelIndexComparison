@@ -278,7 +278,7 @@ dataframe %>%
   labs(title = plot_title,
        y = y_axis,
        x = ("Year"),
-       color = ("Ocean Model"))
+       color = ("Model"))
 }
   
   
@@ -381,14 +381,14 @@ facet_version_annual_plot_scaled <- Scaled_combined_models %>%
   geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.8) +
   scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 10 )) +
   facet_wrap(~variable_plot_subtitle) +
-  labs(color = ("Ocean Model")) +
+  labs(color = ("Model")) +
   xlab("Year") +
   ylab("Standardized value") +
   theme_minimal() +
   theme(legend.position = "bottom")
 
-ggsave("Figure2.png", plot = facet_version_annual_plot_scaled, width = 9, height = 7.5, dpi = 300)
-ggsave("Figure2.pdf", plot = facet_version_annual_plot_scaled, width = 9, height = 7.5, dpi = 300)
+ggsave("Figure2.png", plot = facet_version_annual_plot_scaled, width = 7, height = 6.2, dpi = 300)
+ggsave("Figure2.pdf", plot = facet_version_annual_plot_scaled, width = 7, height = 6.2, dpi = 300)
 
 # view result
 facet_version_annual_plot_scaled
@@ -418,14 +418,14 @@ facet_version_annual_plot_unscaled <- UnScaled_combined_models %>%
   geom_line() + 
   scale_x_continuous(breaks = seq(min(Scaled_combined_models$year), max(Scaled_combined_models$year), by = 10 )) +
   facet_wrap(~variable_plot_subtitle, scales = "free_y") +
-  labs(color = ("Ocean Model")) +
+  labs(color = ("Model")) +
   xlab("Year") +
   ylab("Unstandardized value") +
   theme_minimal() +
   theme(legend.position = "bottom")
 
-ggsave("Figure3.png", plot = facet_version_annual_plot_unscaled, width = 9, height = 7.5, dpi = 300)
-ggsave("Figure3.pdf", plot = facet_version_annual_plot_unscaled, width = 9, height = 7.5, dpi = 300)
+ggsave("Figure3.png", plot = facet_version_annual_plot_unscaled, width = 7.2, height = 6, dpi = 300)
+ggsave("Figure3.pdf", plot = facet_version_annual_plot_unscaled, width = 7.2, height = 6, dpi = 300)
 
 # view result
 facet_version_annual_plot_unscaled
@@ -443,7 +443,7 @@ plot_list <- Scaled_combined_models %>%
       geom_point() + 
       geom_line() + 
       scale_x_continuous(breaks = seq(min(df$year), max(df$year), by = 10)) +
-      labs(title = unique(df$variable), color = "Ocean Model") +
+      labs(title = unique(df$variable), color = "Model") +
       theme_minimal()
   })
 
@@ -480,7 +480,7 @@ make_plot <- function(var_name) {
     geom_hline(yintercept = 0, color = "darkblue", linetype = 3, linewidth = 1) +  # Add a horizontal reference line at y=0
     labs(
       title = var_name,    # Set the plot title as the variable name
-      color = "Ocean Model"  # Label for the color legend
+      color = "Model"  # Label for the color legend
     ) +
     scale_x_continuous(
       breaks = seq(min(df$year), max(df$year), by = 5)  # Set x-axis breaks every 5 years
@@ -548,7 +548,7 @@ make_plot <- function(var_name) {
     geom_line() +   # Connect points with a line
     labs(
       title = var_name,    # Set the plot title as the variable name
-      color = "Ocean Model"  # Label for the color legend
+      color = "Model"  # Label for the color legend
     ) +
     scale_x_continuous(
       breaks = seq(min(df$year), max(df$year), by = 5)  # Set x-axis breaks every 5 years
@@ -639,7 +639,7 @@ make_scaled_plot <- function(data, vars, facet_labels, plot_title) {
       labeller = labeller(variable = facet_labels)
     ) +
     labs(
-      color = "Ocean Model",
+      color = "Model",
       title = plot_title
     ) +
     theme_bw() +
@@ -1011,7 +1011,7 @@ MOM6plot_function_by_season <- function(variable_name, season_name, dataframe, p
     labs(title = paste(plot_title, "-", season_name),
          y = y_axis,
          x = "Year",
-         color = "Ocean Model") +
+         color = "Model") +
     theme_minimal()
 }
 
@@ -1237,7 +1237,7 @@ GLORYplot_function_by_season <- function(variable_name, season_name, dataframe, 
     labs(title = paste(plot_title, "-", season_name),
          y = y_axis,
          x = "Year",
-         color = "Ocean Model") +
+         color = "Model") +
     theme_minimal()
 }
 
@@ -2149,11 +2149,14 @@ partial_effects <- ggplot(smooths_gam) +  # Setup the plot with the fitted value
     mapping = aes(x = -3.5, y = 0.4, label = round(DevianceExp, 2), group = covariate_plot_subtitle),
     col='#00BFC4'
   ) +
-  xlim(c(-4,4))+
+  xlim(c(-4,4)) +
   guides(text = "none") +
-  theme_minimal()
+  xlab("Standardized value") +
+  ylab("Recruitment deviations") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 
-ggsave(filename = "Figure8.png", plot = partial_effects, width = 8, height = 6, dpi = 300)
-ggsave(filename = "Figure8.pdf", plot = partial_effects, width = 8, height = 6, dpi = 300)
+ggsave(filename = "Figure8.png", plot = partial_effects, width = 7, height = 6, dpi = 300)
+ggsave(filename = "Figure8.pdf", plot = partial_effects, width = 7, height = 6, dpi = 300)
 partial_effects
 ```

@@ -1,6 +1,6 @@
 ---
 title: "Yellow Tail: GLORY vs. MOM6"
-output: html_notebook
+output: html_document
 ---
 
 ```{r setup, include=FALSE}

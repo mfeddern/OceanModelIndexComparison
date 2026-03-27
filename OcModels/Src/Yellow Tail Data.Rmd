@@ -384,7 +384,7 @@ facet_version_annual_plot_scaled <- Scaled_combined_models %>%
   labs(color = ("Model")) +
   xlab("Year") +
   ylab("Standardized value") +
-  theme_minimal() +
+  theme_bw() +
   theme(legend.position = "bottom")
 
 ggsave("Figure2.png", plot = facet_version_annual_plot_scaled, width = 7, height = 6.2, dpi = 300)
@@ -421,7 +421,7 @@ facet_version_annual_plot_unscaled <- UnScaled_combined_models %>%
   labs(color = ("Model")) +
   xlab("Year") +
   ylab("Unstandardized value") +
-  theme_minimal() +
+  theme_bw() +
   theme(legend.position = "bottom")
 
 ggsave("Figure3.png", plot = facet_version_annual_plot_unscaled, width = 7.2, height = 6, dpi = 300)
@@ -1686,7 +1686,7 @@ facet_version_season_plot <- function(season_df, var_df_name, var_plot_name) {
   geom_point() +
   geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.8) +
   facet_wrap(. ~ season_plot_subtitle) +
-  theme_minimal() +
+  theme_bw() +
   labs(title = var_plot_name, y = "Standardized value", x = "Year", color = "Model") +
   theme(legend.position = "bottom")
 }
@@ -2153,7 +2153,7 @@ partial_effects <- ggplot(smooths_gam) +  # Setup the plot with the fitted value
   guides(text = "none") +
   xlab("Standardized value") +
   ylab("Recruitment deviations") +
-  theme_minimal() +
+  theme_bw() +
   theme(legend.position = "bottom")
 
 ggsave(filename = "Figure8.png", plot = partial_effects, width = 7, height = 6, dpi = 300)

@@ -1662,7 +1662,7 @@ print(plot_XV)
 ```
 
 ```{r}
-plot_YV <- make_all_seasons_plot("Longshore transport", season_codes_YV, Season_combined.df)
+plot_YV <- make_all_seasons_plot("Alongshore transport", season_codes_YV, Season_combined.df)
 print(plot_YV)
 ```
 
@@ -1721,7 +1721,7 @@ facet_xv_seasonal
 facet_yv_seasonal <- facet_version_season_plot(
   season_df = Season_combined.df, 
   var_df_name = "YV_0_180",
-  var_plot_name = "Longshore transport"
+  var_plot_name = "Alongshore transport"
 )
 ggsave(filename = "Figure6.png", plot = facet_yv_seasonal, width = 7, height = 5, dpi = 300)
 ggsave(filename = "Figure6.pdf", plot = facet_yv_seasonal, width = 7, height = 5, dpi = 300)

@@ -363,6 +363,7 @@ FacetWrap_function(
 
 facet_version_annual_plot_scaled <- Scaled_combined_models %>%
   mutate(
+    source = ifelse(source == "MOM6", "MOM6-NEP10k", source),
     variable_plot_subtitle = case_when(
       variable == "Tcop" ~ "A) Tcop",
       variable == "Tpart" ~ "B) Tpart",
@@ -401,6 +402,7 @@ facet_version_annual_plot_scaled
 
 facet_version_annual_plot_unscaled <- UnScaled_combined_models %>%
   mutate(
+    source = ifelse(source == "MOM6", "MOM6-NEP10k", source),
     variable_plot_subtitle = case_when(
       variable == "Tcop" ~ "A) Tcop",
       variable == "Tpart" ~ "B) Tpart",
@@ -1674,6 +1676,7 @@ facet_version_season_plot <- function(season_df, var_df_name, var_plot_name) {
   group_by(year, Season, source) |>
   summarize(mean_value = mean(value)) |>
   mutate(
+    source = ifelse(source == "MOM6", "MOM6-NEP10k", source),
     season_plot_subtitle = case_when(
       Season == "Winter (Jan–Mar)" ~ "A) Winter (Jan-Mar)",
       Season == "Spring (Apr–Jun)" ~ "B) Spring (Apr-Jun)",
@@ -2089,6 +2092,7 @@ for(i in 1:length(covariatenames)){
 # add covariate subplot name to smooths_gam and results_gam
 smooths_gam <- smooths_gam %>%
   mutate(
+    Model = ifelse(Model == "MOM6", "MOM6-NEP10k", Model),
     covariate_plot_subtitle = case_when(
       covariate == "Tcop" ~ "A) Tcop",
       covariate == "Tpart" ~ "B) Tpart",
@@ -2103,6 +2107,7 @@ smooths_gam <- smooths_gam %>%
   )
 results_gam <- results_gam %>%
   mutate(
+    Model = ifelse(Model == "MOM6", "MOM6-NEP10k", Model),
     covariate_plot_subtitle = case_when(
       covariate == "Tcop" ~ "A) Tcop",
       covariate == "Tpart" ~ "B) Tpart",
@@ -2124,6 +2129,7 @@ partial_effects <- ggplot(smooths_gam) +  # Setup the plot with the fitted value
       data = LongScaled_CombinedModels_Rec_Yellow_Tail.df %>%
         rename(covariate = variable) %>%
           mutate(
+            source = ifelse(source == "MOM6", "MOM6-NEP10k", source),
             covariate_plot_subtitle = case_when(
               covariate == "Tcop" ~ "A) Tcop",
               covariate == "Tpart" ~ "B) Tpart",
@@ -2140,7 +2146,7 @@ partial_effects <- ggplot(smooths_gam) +  # Setup the plot with the fitted value
       alpha = 0.2
     ) + # Add your data points
   geom_text(
-    data    = results_gam %>% filter(Model == "MOM6"),
+    data    = results_gam %>% filter(Model == "MOM6-NEP10k"),
     mapping = aes(x = -3.5, y =0.7, label = round(DevianceExp, 2), group = covariate_plot_subtitle),
     col='#F8766D'
   ) +
